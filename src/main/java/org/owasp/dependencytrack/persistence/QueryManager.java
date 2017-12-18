@@ -37,6 +37,7 @@ import org.owasp.dependencytrack.model.ProjectProperty;
 import org.owasp.dependencytrack.model.Scan;
 import org.owasp.dependencytrack.model.Tag;
 import org.owasp.dependencytrack.model.Vulnerability;
+import org.owasp.dependencytrack.model.VulnerabilityMetrics;
 import javax.jdo.FetchPlan;
 import javax.jdo.Query;
 import java.util.ArrayList;
@@ -903,6 +904,17 @@ public class QueryManager extends AlpineQueryManager {
     }
 
     /**
+     * Retrieves the current VulnerabilityMetrics
+     * @return a VulnerabilityMetrics object
+     */
+    @SuppressWarnings("unchecked")
+    public List<VulnerabilityMetrics> getVulnerabilityMetrics() {
+        final Query query = pm.newQuery(VulnerabilityMetrics.class);
+        query.setOrdering("year asc, month asc");
+        return execute(query).getList(VulnerabilityMetrics.class);
+    }
+
+    /**
      * Retrieves the most recent PortfolioMetrics.
      * @return a PortfolioMetrics object
      */
@@ -1006,6 +1018,32 @@ public class QueryManager extends AlpineQueryManager {
         final Query query = pm.newQuery(PortfolioMetrics.class, "component == :component && lastOccurrence >= :since");
         query.setOrdering("lastOccurrence asc");
         return (List<ComponentMetrics>)query.execute(component, since);
+    }
+
+    /**
+     * Synchronizes VulnerabilityMetrics.
+     */
+    public void synchronizeVulnerabilityMetrics(VulnerabilityMetrics metric) {
+        final Query query;
+        final List<VulnerabilityMetrics> result;
+        if (metric.getMonth() == null) {
+            query = pm.newQuery(VulnerabilityMetrics.class, "year == :year && month == null");
+            result = execute(query, metric.getYear()).getList(VulnerabilityMetrics.class);
+        } else {
+            query = pm.newQuery(VulnerabilityMetrics.class, "year == :year && month == :month");
+            result = execute(query, metric.getYear(), metric.getMonth()).getList(VulnerabilityMetrics.class);
+        }
+        if (result.size() == 1) {
+            VulnerabilityMetrics m = result.get(0);
+            m.setCount(metric.getCount());
+            m.setMeasuredAt(metric.getMeasuredAt());
+            persist(m);
+        } else if (result.size() == 0) {
+            persist(metric);
+        } else {
+            delete(result);
+            persist(metric);
+        }
     }
 
     /**

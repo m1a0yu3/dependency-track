@@ -5,6 +5,7 @@
 [![License][license-image]][license-url]
 [![Slack](https://img.shields.io/badge/chat%20on-slack-46BC99.svg)](https://owasp.slack.com/messages/proj-dependency-track)
 [![Join the chat at https://gitter.im/dependency-track/Lobby](https://badges.gitter.im/dependency-track/Lobby.svg)](https://gitter.im/dependency-track/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&label=Follow)](https://twitter.com/dependencytrack)
 
 Dependency-Track
 =========
@@ -20,7 +21,9 @@ Dependency-Track is a Software Composition Analysis (SCA) platform that keeps tr
 components used in all the applications an organization creates or consumes. It integrates with multiple
 vulnerability databases including the [National Vulnerability Database] (NVD), [Node Security Platform] (NSP),
 and [VulnDB] from [Risk Based Security]. Dependency-Track monitors all applications in its portfolio in order
-to proactively identify vulnerabilities in components that are placing your applications at risk.  
+to proactively identify vulnerabilities in components that are placing your applications at risk. Use of 
+Dependency-Track can play a vital role in an overall Supply Chain Risk Management (SCRM) program by providing 
+many of the recommendations outlined in the [NIST Cybersecurity Framework](https://www.nist.gov/cybersecurity-framework).
 
 Dependency-Track is designed to be used in an automated DevOps environment where [Dependency-Check]
 results or specific BOM (Bill of Material) formats are automatically ingested during CI/CD. Use of the 
@@ -31,7 +34,7 @@ still keeping tabs on component usage and any inherited risk.
 Dependency-Track can also be used to monitor vulnerabilities in COTS (commercial off-the-shelf) software.
 
 **NOTICE: Dependency-Track is pre-release alpha quality software. It is expected to be feature complete 
-in Janurary 2018 with betas and release candidates available in Q1.**
+in January 2018 with betas and release candidates available in Q1.**
 
 
 Features
@@ -62,6 +65,34 @@ Ecosystem Overview
 * Dependency-Check can use Dependency-Track as a source of evidence
 * Dependency-Track results can be integrated into ThreadFix
 
+Screenshots
+-------------------
+The dashboard:
+![alt text](https://raw.githubusercontent.com/stevespringett/dependency-track/master/docs/images/screenshots/dashboard.png)
+
+
+A list of all projects:
+![alt text](https://raw.githubusercontent.com/stevespringett/dependency-track/master/docs/images/screenshots/projects.png)
+
+
+Viewing a list of components that are dependencies of a specific project:
+![alt text](https://raw.githubusercontent.com/stevespringett/dependency-track/master/docs/images/screenshots/components.png)
+
+
+Viewing an individual vulnerable component:
+![alt text](https://raw.githubusercontent.com/stevespringett/dependency-track/master/docs/images/screenshots/vulnerable-component.png)
+
+
+Viewing an individual vulnerability:
+![alt text](https://raw.githubusercontent.com/stevespringett/dependency-track/master/docs/images/screenshots/vulnerability.png)
+
+
+Viewing all vulnerabilities in the system:
+![alt text](https://raw.githubusercontent.com/stevespringett/dependency-track/master/docs/images/screenshots/vulnerabilities.png)
+
+
+Viewing an individual license:
+![alt text](https://raw.githubusercontent.com/stevespringett/dependency-track/master/docs/images/screenshots/license.png)
 
 Distributions
 -------------------
@@ -151,18 +182,18 @@ directory on Windows machines. This directory contains the NIST NVD mirror, embe
 and audit logs, as well as keys used during normal operation, such as validating JWT tokens. It is essential that
 best practices are followed to secure the .dependency-track directory structure.
 
-Mailing List
+Community
 -------------------
 
-Subscribe: [https://lists.owasp.org/mailman/listinfo/owasp_dependency_track_project] [subscribe]
+Gitter: https://gitter.im/dependency-track/Lobby
 
-Post: [owasp_dependency_track_project@lists.owasp.org] [post]
+Google Groups: https://groups.google.com/forum/#!forum/dependency-track
 
 
 Support
 -------------------
 
-OWASP Dependency-Track is an open source project, created by people who believe that the knowledge of using 
+Dependency-Track is an open source project, created by people who believe that the knowledge of using 
 vulnerable components should be accessible to anyone with a desire to know. By supporting this project, you'll
 allow the team to outsource testing, infrastructure, further research and development efforts, and engage in 
 outreach to various communities that would benefit from this technology.
@@ -193,8 +224,6 @@ the [NOTICES.txt] [notices] file for more information.
   [SPDX]: https://spdx.org
   [license-image]: https://img.shields.io/badge/license-apache%20v2-brightgreen.svg
   [license-url]: https://github.com/stevespringett/alpine/blob/master/LICENSE.txt
-  [subscribe]: https://lists.owasp.org/mailman/listinfo/owasp_dependency_track_project
-  [post]: mailto:owasp_dependency_track_project@lists.owasp.org
   [Apache License 2.0]: https://github.com/stevespringett/dependency-track/blob/3.0-dev/LICENSE.txt
   [notices]: https://github.com/stevespringett/dependency-track/blob/master/NOTICES.txt
   [Alpine]: https://github.com/stevespringett/Alpine
