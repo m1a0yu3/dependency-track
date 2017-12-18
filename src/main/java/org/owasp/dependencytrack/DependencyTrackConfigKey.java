@@ -28,9 +28,14 @@ import alpine.Config;
  */
 public enum DependencyTrackConfigKey implements Config.Key {
 
-    DATASOURCE_VULN_DB_ENABLED  ("datasource.vulndb.enabled", false),
-    DATASOURCE_VULN_DB_KEY      ("datasource.vulndb.key", null),
-    DATASOURCE_VULN_DB_SECRET   ("datasource.vulndb.secret", null);
+    DATASOURCE_VULN_DB_ENABLED      ("datasource.vulndb.enabled", false),
+    DATASOURCE_VULN_DB_KEY          ("datasource.vulndb.key", null),
+    DATASOURCE_VULN_DB_SECRET       ("datasource.vulndb.secret", null),
+    DC_DB_DRIVERNAME                ("dcheck.database.drivername",null),
+    DC_DB_CONNECTION_STRING         ("dcheck.database.connectionstring",null),
+    DC_DB_DRIVERPATH                ("dcheck.database.driverpath",null),
+    DC_DB_USER                      ("dcheck.database.user",null),
+    DC_DB_PASSWORD                  ("dcheck.database.password",null);
 
     private String propertyName;
     private Object defaultValue;

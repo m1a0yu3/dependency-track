@@ -17,14 +17,11 @@
  */
 package org.owasp.dependencytrack.tasks;
 
-import alpine.Config;
-import alpine.event.framework.Event;
-import alpine.event.framework.Subscriber;
-import alpine.logging.Logger;
-import alpine.persistence.PaginatedResult;
-import alpine.resources.AlpineRequest;
-import alpine.resources.OrderDirection;
-import alpine.resources.Pagination;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.owasp.dependencytrack.DependencyTrackConfigKey;
 import org.owasp.dependencycheck.agent.DependencyCheckScanAgent;
 import org.owasp.dependencycheck.exception.ScanAgentException;
 import org.owasp.dependencycheck.reporting.ReportGenerator;
@@ -36,9 +33,15 @@ import org.owasp.dependencytrack.parser.dependencycheck.DependencyCheckParser;
 import org.owasp.dependencytrack.parser.dependencycheck.model.Analysis;
 import org.owasp.dependencytrack.parser.dependencycheck.util.ModelConverter;
 import org.owasp.dependencytrack.persistence.QueryManager;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+
+import alpine.Config;
+import alpine.event.framework.Event;
+import alpine.event.framework.Subscriber;
+import alpine.logging.Logger;
+import alpine.persistence.PaginatedResult;
+import alpine.resources.AlpineRequest;
+import alpine.resources.OrderDirection;
+import alpine.resources.Pagination;
 
 /**
  * Subscriber task that performs a Dependency-Check analysis or update.
@@ -54,6 +57,11 @@ public class DependencyCheckTask implements Subscriber {
     private static final String DC_REPORT_DIR = DC_ROOT_DIR + File.separator + "reports";
     private static final String DC_REPORT_FILE = DC_REPORT_DIR + File.separator + "dependency-check-report.xml";
     private static final String DC_GLOBAL_SUPPRESSION = DC_ROOT_DIR + File.separator + "suppressions.xml";
+    private static final String DC_DB_DRIVERNAME = Config.getInstance().getProperty(DependencyTrackConfigKey.DC_DB_DRIVERNAME);
+    private static final String DC_DB_CONNECTION_STRING = Config.getInstance().getProperty(DependencyTrackConfigKey.DC_DB_CONNECTION_STRING);
+    private static final String DC_DB_DRIVERPATH = Config.getInstance().getProperty(DependencyTrackConfigKey.DC_DB_DRIVERPATH);
+    private static final String DC_DB_USER = Config.getInstance().getProperty(DependencyTrackConfigKey.DC_DB_USER);
+    private static final String DC_DB_PASSWORD = Config.getInstance().getProperty(DependencyTrackConfigKey.DC_DB_PASSWORD);
 
     /**
      * {@inheritDoc}
@@ -107,6 +115,17 @@ public class DependencyCheckTask implements Subscriber {
     private void performUpdateOnly(DependencyCheckEvent event) {
         LOGGER.info("Executing Dependency-Check update-only task");
         final DependencyCheckScanAgent scanAgent = new DependencyCheckScanAgent();
+        if (!DC_DB_DRIVERNAME.equals("null") && !DC_DB_CONNECTION_STRING.equals("null")
+                && !DC_DB_DRIVERPATH.equals("null") && !DC_DB_USER.equals("null")){
+            scanAgent.setDatabaseDriverName(DC_DB_DRIVERNAME);
+            scanAgent.setConnectionString(DC_DB_CONNECTION_STRING);
+            scanAgent.setDatabaseDriverPath(DC_DB_DRIVERPATH);
+            scanAgent.setDatabaseUser(DC_DB_USER);
+            scanAgent.setDatabasePassword(DC_DB_PASSWORD);
+            LOGGER.info("Use user set central database for update");
+        } else {
+            LOGGER.info("Some config about DependencyCheck DB in application.properties are empty, use embedded database");
+        }
         scanAgent.setDataDirectory(DC_DATA_DIR);
         scanAgent.setAutoUpdate(true);
         scanAgent.setUpdateOnly(true);
@@ -133,6 +152,17 @@ public class DependencyCheckTask implements Subscriber {
         LOGGER.info("Analyzing " + dependencies.size() + " component(s)");
 
         final DependencyCheckScanAgent scanAgent = new DependencyCheckScanAgent();
+        if (!DC_DB_DRIVERNAME.equals("null") && !DC_DB_CONNECTION_STRING.equals("null")
+                && !DC_DB_DRIVERPATH.equals("null") && !DC_DB_USER.equals("null")){
+            scanAgent.setDatabaseDriverName(DC_DB_DRIVERNAME);
+            scanAgent.setConnectionString(DC_DB_CONNECTION_STRING);
+            scanAgent.setDatabaseDriverPath(DC_DB_DRIVERPATH);
+            scanAgent.setDatabaseUser(DC_DB_USER);
+            scanAgent.setDatabasePassword(DC_DB_PASSWORD);
+            LOGGER.info("Use user set central database for analyze");
+        } else {
+            LOGGER.info("Some config about DependencyCheck DB in application.properties are empty, use embedded database");
+        }
         scanAgent.setDataDirectory(DC_DATA_DIR);
         scanAgent.setReportOutputDirectory(DC_REPORT_DIR);
         scanAgent.setReportFormat(ReportGenerator.Format.XML);
