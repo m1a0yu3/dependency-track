@@ -1,6 +1,11 @@
+<%@page import="alpine.Config" %>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
+<%!
+    private static final String BUILD_ID = Config.getInstance().getApplicationBuildUuid();
+    private static final String VERSION_PARAM = "?v=" + BUILD_ID;
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +14,7 @@
 </head>
 <body data-sidebar="licenses">
 <jsp:include page="/WEB-INF/fragments/navbar.jsp"/>
-<div class="container-fluid">
+<div id="content-container" class="container-fluid require-view-portfolio">
     <div class="content-row main">
         <div class="col-sm-12 col-md-12">
             <h3 class="licenseName"></h3>
@@ -72,10 +77,9 @@
 
         </div> <!-- /main-row> -->
     </div>
-
-    <jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 </div>
+<jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 <jsp:include page="/WEB-INF/fragments/footer.jsp"/>
-<script type="text/javascript" src="<c:url value="/license/functions.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/license/functions.js"/><%=VERSION_PARAM%>"></script>
 </body>
 </html>

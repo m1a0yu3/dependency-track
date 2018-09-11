@@ -36,9 +36,23 @@ function formatLicensesTable(res) {
     return res;
 }
 
+function updateStats(metric) {
+    $("#statTotalProjects").html(metric.projects);
+    $("#statVulnerableProjects").html(metric.vulnerableProjects);
+    $("#statTotalComponents").html(metric.components);
+    $("#statVulnerableComponents").html(metric.vulnerableComponents);
+    $("#statPortfolioVulnerabilities").html(metric.vulnerabilities);
+    $("#statLastMeasurement").html(filterXSS($common.formatTimestamp(metric.lastOccurrence, true)));
+    $("#statInheritedRiskScore").html(metric.inheritedRiskScore);
+}
+
 /**
  * Setup events and trigger other stuff when the page is loaded and ready.
  */
 $(document).ready(function () {
+
+    $rest.getPortfolioCurrentMetrics(function(metrics) {
+        updateStats(metrics);
+    });
 
 });

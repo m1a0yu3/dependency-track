@@ -1,6 +1,11 @@
+<%@page import="alpine.Config" %>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
+<%!
+    private static final String BUILD_ID = Config.getInstance().getApplicationBuildUuid();
+    private static final String VERSION_PARAM = "?v=" + BUILD_ID;
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +14,7 @@
 </head>
 <body data-sidebar="dashboard">
 <jsp:include page="/WEB-INF/fragments/navbar.jsp"/>
-<div class="container-fluid">
+<div id="content-container" class="container-fluid require-view-portfolio">
     <div class="content-row main">
         <div class="col-sm-12 col-md-12">
             <h3>Dashboard</h3>
@@ -35,6 +40,18 @@
                                 <div class="panel-heading">
                                     <div class="row">
                                         <div id="projectchart" style="height:200px"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Dependency Chart-->
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="panel widget">
+                                <div class="panel-heading">
+                                    <div class="row">
+                                        <div id="dependencychart" style="height:200px"></div>
                                     </div>
                                 </div>
                             </div>
@@ -118,14 +135,22 @@
                             <div class="panel widget">
                                 <div class="panel-heading">
                                     <div class="row">
-                                        <table width="100%" class="table">
+                                        <table width="100%" class="table widget-table">
                                             <tr>
                                                 <td>Projects (total):</td>
-                                                <td><span id="statTotalProject"></span></td>
+                                                <td><span id="statTotalProjects"></span></td>
                                             </tr>
                                             <tr>
                                                 <td>Vulnerable Projects:</td>
                                                 <td><span id="statVulnerableProjects"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Dependencies (total):</td>
+                                                <td><span id="statTotalDependencies"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Vulnerable Dependencies:</td>
+                                                <td><span id="statVulnerableDependencies"></span></td>
                                             </tr>
                                             <tr>
                                                 <td>Components (total):</td>
@@ -140,8 +165,12 @@
                                                 <td><span id="statPortfolioVulnerabilities"></span></td>
                                             </tr>
                                             <tr>
+                                                <td>Suppressed:</td>
+                                                <td><span id="statPortfolioSuppressed"></span></td>
+                                            </tr>
+                                            <tr>
                                                 <td>Last Measurement:</td>
-                                                <td><span id="statLastMeasurement"></span></td>
+                                                <td><span id="statLastMeasurement"></span>&nbsp;&nbsp;<span id="refresh" class="refresh-metric require-portfolio-management"><i class="fa fa-refresh" aria-hidden="true"></i></span></td>
                                             </tr>
                                         </table>
                                     </div>
@@ -154,9 +183,9 @@
 
         </div>
     </div>
-    <jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 </div>
+<jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 <jsp:include page="/WEB-INF/fragments/footer.jsp"/>
-<script type="text/javascript" src="<c:url value="/functions.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/functions.js"/><%=VERSION_PARAM%>"></script>
 </body>
 </html>

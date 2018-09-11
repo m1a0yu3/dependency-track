@@ -23,22 +23,18 @@
     <parent>
         <groupId>us.springett</groupId>
         <artifactId>alpine-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.3.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.owasp</groupId>
+    <groupId>org.dependencytrack</groupId>
     <artifactId>dependency-track</artifactId>
     <packaging>war</packaging>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.3.0-SNAPSHOT</version>
 
     <name>Dependency-Track</name>
-    <url>https://www.owasp.org/index.php/OWASP_Dependency_Track</url>
-    <description>
-        Dependency-Track is an intelligent Software Composition Analysis (SCA) application
-        that allows organizations to automatically ingest and identify third-party components and
-        any inherited vulnerabilities from their use.
-    </description>
+    <url>https://dependencytrack.org/</url>
+    <description>Dependency-Track is an intelligent Software Composition Analysis (SCA) platform that allows organizations to identify and reduce risk from the use of third-party and open source components.</description>
     <inceptionYear>2013</inceptionYear>
     <organization>
         <name>OWASP</name>
@@ -65,17 +61,42 @@
         </developer>
     </developers>
 
+    <scm>
+        <connection>scm:git:git@github.com:DependencyTrack/dependency-track.git</connection>
+        <url>https://github.com/DependencyTrack/dependency-track.git</url>
+        <developerConnection>scm:git:git@github.com:DependencyTrack/dependency-track.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/DependencyTrack/dependency-track/issues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>travis-ci</system>
+        <url>https://travis-ci.org/DependencyTrack/dependency-track</url>
+    </ciManagement>
+
     <properties>
         <!-- Dependency Versions -->
-        <lib.lucene.version>4.7.2</lib.lucene.version>
-        <lib.dependency-check.version>3.0.2</lib.dependency-check.version>
+        <lib.alpine.version>${project.parent.version}</lib.alpine.version>
+        <lib.cpe-parser.version>1.0.0</lib.cpe-parser.version>
+        <lib.cvss-calculator.version>1.1.0</lib.cvss-calculator.version>
+        <lib.dependency-check.version>3.2.1</lib.dependency-check.version>
+        <lib.lucene.version>5.5.5</lib.lucene.version>
+        <lib.packageurl.version>1.0.0-SNAPSHOT</lib.packageurl.version>
+        <lib.pebble.version>3.0.4-SNAPSHOT</lib.pebble.version>
+        <lib.spdx-tools.version>2.1.12</lib.spdx-tools.version>
+        <lib.unirest.version>2.2.10</lib.unirest.version>
         <lib.vulndb-data-mirror.version>1.0.0-SNAPSHOT</lib.vulndb-data-mirror.version>
-        <!-- build properties -->
+        <!-- Maven Plugin Properties -->
+        <plugin.github-release-plugin.version>1.2.0</plugin.github-release-plugin.version>
         <plugin.retirejs.breakOnFailure>false</plugin.retirejs.breakOnFailure>
     </properties>
 
     <repositories>
-        <!-- Resolve Alpine snapshot releases -->
+        <!-- Resolve snapshot releases -->
         <repository>
             <id>ossrh-snapshot</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
@@ -84,6 +105,7 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
+
         <!-- Resolve Dependency-Check snapshot releases -->
         <repository>
             <id>dependency-check.snapshot</id>
@@ -103,13 +125,19 @@
         <dependency>
             <groupId>us.springett</groupId>
             <artifactId>alpine</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${lib.alpine.version}</version>
         </dependency>
         <!-- CVSS Calculator -->
         <dependency>
             <groupId>us.springett</groupId>
             <artifactId>cvss-calculator</artifactId>
-            <version>1.1.0</version>
+            <version>${lib.cvss-calculator.version}</version>
+        </dependency>
+        <!-- CPE Parser -->
+        <dependency>
+            <groupId>us.springett</groupId>
+            <artifactId>cpe-parser</artifactId>
+            <version>${lib.cpe-parser.version}</version>
         </dependency>
         <!-- OWASP Dependency-Check -->
         <dependency>
@@ -121,6 +149,12 @@
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-utils</artifactId>
             <version>${lib.dependency-check.version}</version>
+        </dependency>
+        <!-- Package URL -->
+        <dependency>
+            <groupId>com.github.package-url</groupId>
+            <artifactId>packageurl-java</artifactId>
+            <version>${lib.packageurl.version}</version>
         </dependency>
         <!-- Lucene / Overrides the Lucene version included with Dependency-Check -->
         <dependency>
@@ -148,11 +182,50 @@
             <artifactId>lucene-sandbox</artifactId>
             <version>${lib.lucene.version}</version>
         </dependency>
+        <!-- Pebble templating engine -->
+        <dependency>
+            <groupId>io.pebbletemplates</groupId>
+            <artifactId>pebble</artifactId>
+            <version>${lib.pebble.version}</version>
+        </dependency>
         <!-- VulnDB data mirroring and parsing -->
         <dependency>
             <groupId>us.springett</groupId>
             <artifactId>vulndb-data-mirror</artifactId>
             <version>${lib.vulndb-data-mirror.version}</version>
+            <!-- Exclude transitive version so Dependency-Track can manage independently -->
+            <exclusions>
+                <exclusion>
+                    <groupId>io.github.openunirest</groupId>
+                    <artifactId>unirest-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Unirest -->
+        <dependency>
+            <groupId>io.github.openunirest</groupId>
+            <artifactId>unirest-java</artifactId>
+            <version>${lib.unirest.version}</version>
+        </dependency>
+        <!-- SPDX -->
+        <dependency>
+            <groupId>org.spdx</groupId>
+            <artifactId>spdx-tools</artifactId>
+            <version>${lib.spdx-tools.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-slf4j-impl</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
@@ -171,7 +244,32 @@
                 </includes>
             </resource>
         </resources>
-
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>false</filtering>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+                <groupId>de.jutzig</groupId>
+                <artifactId>github-release-plugin</artifactId>
+                <version>${plugin.github-release-plugin.version}</version>
+                <configuration>
+                    <releaseName>${project.version}</releaseName>
+                    <tag>${project.version}</tag>
+                    <fileSets>
+                        <fileSet>
+                            <directory>${project.build.directory}</directory>
+                            <includes>
+                                <include>dependency-track.war</include>
+                                <include>dependency-track-embedded.war</include>
+                            </includes>
+                        </fileSet>
+                    </fileSets>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
 </project>

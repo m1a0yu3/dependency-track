@@ -4,7 +4,7 @@ html {
 body {
     padding-top: 50px;
     font-family: 'Open Sans', sans-serif;
-    font-size: 1.250em;
+    font-size: 1.313em;
 }
 * {
     -webkit-border-radius: 0 !important;
@@ -19,6 +19,7 @@ body {
     padding-left: 45px;
     padding-right: 15px;
     box-shadow: 0 2px 15px 0 rgba(46, 54, 63, 0.8); /* same as: #2e363f but with opacity mod */
+    /*display: none; */
 }
 .navbar-fixed-top {
     border: 0;
@@ -72,6 +73,7 @@ body {
     font-weight: 600;
 }
 .table td {
+    /* todo: comment out to wrap permission descriptions , but breaks global component audit mode formatting */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -105,6 +107,38 @@ table tr:first-child th {
 }
 .table td.expand, .table th.expand {
     width: 10%;
+}
+.table td.expand-20, .table th.expand-20 {
+    width: 20%;
+}
+/* usage: use outer div/span with class truncate-ellipsis and inner span with content to truncate */
+.truncate-ellipsis {
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    white-space: nowrap;
+}
+.truncate-ellipsis > * {
+    display: table-cell;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.modal-dialog {
+    margin: 50px auto;
+}
+.modal-header {
+    background-color: #23446F;
+    padding: 10px 15px;
+}
+.modal-title {
+    font-size: 1.4em;
+    color: #ffffff;
+}
+.modal-content {
+    border: 0;
+}
+.login-modal-header {
+    background-color: #ffffff;
 }
 .login-modal-header .close {
     font-size: 36px;
@@ -220,6 +254,10 @@ h4 {
     border-right: 0;
     border-bottom: 0;
 }
+.panel-with-tabbed-modal-body {
+    margin-bottom: 0;
+    border: 0;
+}
 .detail-table thead > tr > th.detail,
 .detail-table tbody > tr:not(.detail-view) > td:first-of-type {
     display: none;
@@ -297,7 +335,7 @@ h4 {
     background-color: #B4AFE4;
     border: 1px solid #6E63CC;
 }
-.label-source-retire {
+.label-source-ossindex {
     font-weight: normal;
     color: #222222;
     background-color: #AFE4BF;
@@ -315,7 +353,7 @@ h4 {
     background-color: #E4AFAF;
     border: 1px solid #CC6666;
 }
-.label-source-manual {
+.label-source-internal {
     font-weight: normal;
     color: #222222;
     background-color: #EBE5A8;
@@ -336,6 +374,9 @@ h4 {
 }
 .widget .panel-footer:hover {
      background: #e0e0e0;
+}
+.widget-overview-first {
+    margin-top: 30px;
 }
 #navbar ul li a, .btn, .btn:focus, .btn.focus, .btn:active:focus, .btn:active.focus,
 .widget .widget-details-selector:focus, .widget .widget-details-selector.focus,
@@ -359,7 +400,6 @@ h4 {
     vertical-align: middle;
 }
 .title-container {
-    float: left;
 }
 .huge {
     font-size: 40px;
@@ -420,10 +460,10 @@ h4 {
     background-color: #999;
 }
 .btn-primary {
-    background-color: #3D598B;
+    background-color: #23446F;
 }
 .btn-primary:hover {
-    background-color: #768AAD;
+    background-color: #2F649C;
 }
 .btn-default {
     background-color: #eeeeee;
@@ -442,6 +482,7 @@ h4 {
     z-index:1;
     height: 100%;
     position: fixed;
+    /*display: none; */
 }
 #sidebar > ul {
     list-style: none;
@@ -568,6 +609,11 @@ h4 {
 .pagination-info {
     margin-left: 8px;
 }
+.formattedTemplateContent {
+    font-size: 1.0em;
+    font-family: monospace;
+    white-space: pre;
+}
 .formattedLicenseContent {
     font-size: 1.12em;
     font-family: monospace;
@@ -672,4 +718,97 @@ p {
     margin: 0 20px 5px 20px;
     padding: 3px 0;
     border-bottom: 1px solid #ccc;
+}
+.widget-table tr:first-child td {
+    border-top: 0;
+}
+.widget-table {
+    margin-bottom: 0;
+}
+.fa-refresh:hover {
+    color: #00AA00;
+    cursor:pointer;
+}
+.preview-feature-label-modal {
+    float: right;
+    background-color: #F59B00;
+    color: #ffffff;
+    font-weight: 900;
+    padding: 4px;
+    margin: 0;
+}
+select:not([multiple]) {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAMCAYAAABSgIzaAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6NDZFNDEwNjlGNzFEMTFFMkJEQ0VDRTM1N0RCMzMyMkIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6NDZFNDEwNkFGNzFEMTFFMkJEQ0VDRTM1N0RCMzMyMkIiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo0NkU0MTA2N0Y3MUQxMUUyQkRDRUNFMzU3REIzMzIyQiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo0NkU0MTA2OEY3MUQxMUUyQkRDRUNFMzU3REIzMzIyQiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PuGsgwQAAAA5SURBVHjaYvz//z8DOYCJgUxAf42MQIzTk0D/M+KzkRGPoQSdykiKJrBGpOhgJFYTWNEIiEeAAAMAzNENEOH+do8AAAAASUVORK5CYII=) no-repeat right 50%;
+    padding: .5em 1.5em .5em .5em;
+    border-radius: 0;
+}
+label {
+    font-weight: 600;
+    color: #777777;
+}
+label.required:after {
+    color: #d62728;
+    content:" *";
+}
+input.required {
+    border-color: #ffd700;
+}
+.inDetailFormatterForm input[type=checkbox] {
+    position: relative;
+}
+.inDetailFormatterForm label {
+    padding-left: 0;
+}
+.admin-form-content {
+    width: 450px;
+}
+.panel-heading .admin-accordion {
+    background-color: #efefed;
+}
+.admin-accordion .panel-title {
+    font-size: 1.125em;
+    font-weight: 600;
+}
+h3.admin-section-title  {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-top: 0;
+}
+/* TODO: Temporarily hiding 'View Details' bar on small widgets until a future release when the functionality can be completed */
+.widget-row .col-lg-3 .widget-details-selector {
+    display: none;
+}
+button.require-portfolio-management {
+    display: none;
+}
+.nav>li.require-vulnerability-analysis, div.require-vulnerability-analysis, div.require-access-management, div.require-system-configuration {
+    display: none;
+}
+.refresh-metric {
+    display: none;
+}
+#content-container {
+    display: none;
+}
+.spinner:before {
+    content: "";
+    box-sizing: border-box;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 120px;
+    width: 120px;
+    margin-top: -60px;
+    margin-left: -60px;
+    border-radius: 50%;
+    border: 5px solid lightgray;
+    border-top-color: coral;
+    animation: spinner 0.7s linear infinite;
+}
+@keyframes spinner {
+    to{
+        transform: rotate(360deg);
+    }
 }

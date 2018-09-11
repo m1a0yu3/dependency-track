@@ -1,6 +1,11 @@
+<%@page import="alpine.Config" %>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
+<%!
+    private static final String BUILD_ID = Config.getInstance().getApplicationBuildUuid();
+    private static final String VERSION_PARAM = "?v=" + BUILD_ID;
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +14,7 @@
 </head>
 <body data-sidebar="projects">
 <jsp:include page="/WEB-INF/fragments/navbar.jsp"/>
-<div class="container-fluid">
+<div id="content-container" class="container-fluid require-view-portfolio">
     <div class="widget-detail-row main">
         <div class="col-lg-12 col-md-12">
             <div class="panel widget">
@@ -24,7 +29,11 @@
                                     <span class="name" id="projectTitle"></span>
                                     <span id="projectVersion"></span>
                                 </span>
-                                <br/>Sub Project: 0<br/>
+                                <div class="form-inline" role="form">
+                                    <div class="form-group">
+                                        <select name="version" class="selectpicker form-control" title="Version" data-live-search="true" data-width="200px" id="projectVersionSelect"></select>
+                                    </div>
+                                </div>
                                 <span id="tags"></span>
                             </div>
                         </div>
@@ -77,64 +86,183 @@
     </div>
     <div class="content-row main">
         <div class="col-sm-12 col-md-12">
-            <div id="componentsToolbar">
-                <div class="form-inline" role="form">
-                    <button id="createComponentButton" class="btn btn-default" data-toggle="modal" data-target="#modalCreateComponent"><span class="fa fa-plus"></span> Create Component</button>
+            <div class="panel with-nav-tabs panel-default tight">
+                <div class="panel-heading">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a href="#overviewTab" data-toggle="tab"><i class="fa fa-line-chart"></i> Overview</a></li>
+                        <li><a href="#dependenciesTab" data-toggle="tab"><i class="fa fa-cubes"></i> Dependencies</a></li>
+                        <li class="require-vulnerability-analysis"><a href="#auditTab" data-toggle="tab"><i class="fa fa-tasks"></i> Audit</a></li>
+                    </ul>
+                </div>
+                <div class="panel-body tight">
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="overviewTab">
+                            <!-- Left Column -->
+                            <div class="col-lg-8">
+                                <div id="projectchart" style="height:200px"></div>
+                                <div id="componentchart" style="height:200px"></div>
+                            </div>
+                            <!-- Right Column -->
+                            <div class="col-lg-4">
+                                <!-- Statistics -->
+                                <div class="widget-row widget-overview-first">
+                                    <div class="col-sm-12">
+                                        <div class="panel widget">
+                                            <div class="panel-heading">
+                                                <table width="100%" class="table widget-table">
+                                                    <tr>
+                                                        <td>Components:</td>
+                                                        <td><span id="statTotalComponents"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Vulnerable Components:</td>
+                                                        <td><span id="statVulnerableComponents"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Vulnerabilities:</td>
+                                                        <td><span id="statVulnerabilities"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Suppressed:</td>
+                                                        <td><span id="statSuppressed"></span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Last Measurement:</td>
+                                                        <td><span id="statLastMeasurement"></span>&nbsp;&nbsp;<span id="refresh" class="refresh-metric require-portfolio-management"><i class="fa fa-refresh" aria-hidden="true"></i></span></td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="dependenciesTab">
+                            <div id="componentsToolbar">
+                                <div class="form-inline" role="form">
+                                    <button id="addDependencyButton" class="btn btn-default require-portfolio-management" data-toggle="modal" data-target="#modalAddDependency"><span class="fa fa-plus"></span> Add Dependency</button>
+                                    <button id="removeDependencyButton" class="btn btn-default require-portfolio-management"><span class="fa fa-minus"></span> Remove Dependency</button>
+                                </div>
+                            </div>
+                            <table id="dependenciesTable" class="table table-hover detail-table" data-toggle="table"
+                                   data-url="<c:url value="/api/v1/dependency/project/${e:forUriComponent(param.uuid)}"/>" data-response-handler="formatDependenciesTable"
+                                   data-show-refresh="true" data-show-columns="true" data-search="true" data-detail-view="true"
+                                   data-query-params-type="pageSize" data-side-pagination="server" data-pagination="true"
+                                   data-silent-sort="false" data-page-size="10" data-page-list="[10, 25, 50, 100]"
+                                   data-toolbar="#componentsToolbar" data-click-to-select="true" data-height="100%">
+                                <thead>
+                                <tr>
+                                    <th data-align="center" data-field="state" data-checkbox="true"></th>
+                                    <th data-align="left" data-field="componenthref" data-sort-name="component.name" data-sortable="true">Component</th>
+                                    <th data-align="left" data-field="component.version">Version</th>
+                                    <th data-align="left" data-field="latestVersion" data-visible="false">Latest Version</th>
+                                    <th data-align="left" data-field="component.group" data-sort-name="component.group" data-sortable="true">Group</th>
+                                    <th data-align="left" data-field="component.license">License</th>
+                                    <th data-align="left" data-field="vulnerabilities">Vulnerabilities</th>
+                                </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <div class="tab-pane require-vulnerability-analysis" id="auditTab">
+                            <table id="findingsTable" class="table table-hover detail-table" data-toggle="table"
+                                   data-response-handler="formatFindingsTable"
+                                   data-show-refresh="true" data-show-columns="true" data-search="true"
+                                   data-detail-view="true" data-detail-formatter="findingDetailFormatter"
+                                   data-query-params-type="pageSize" data-side-pagination="client" data-pagination="true"
+                                   data-silent-sort="false" data-page-size="10" data-page-list="[10, 25, 50, 100]"
+                                   data-click-to-select="true" data-height="100%">
+                                <thead>
+                                <tr>
+                                    <th data-align="left" data-field="name" data-sortable="true">Component</th>
+                                    <th data-align="left" data-field="version" data-sortable="true">Version</th>
+                                    <th data-align="left" data-field="group" data-sortable="true">Group</th>
+                                    <th data-align="left" data-field="vulnerabilityhref" data-sort-name="vulnId" data-sortable="true">Vulnerability</th>
+                                    <th data-align="left" data-class="expand-20" data-field="cwefield" data-sortable="true">CWE</th>
+                                    <th data-align="left" data-field="severityLabel" data-sort-name="severityRank" data-sortable="true">Severity</th>
+                                    <th data-align="left" data-field="state" data-sortable="true">Analysis</th>
+                                    <th data-align="center" data-field="isSuppressedLabel" data-sortable="true" data-class="tight">Suppressed</th>
+                                </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <!-- end of tabs -->
+
+
+                    </div>
                 </div>
             </div>
-            <table id="componentsTable" class="table table-hover detail-table" data-toggle="table"
-                   data-url="<c:url value="/api/v1/dependency/project/${param['uuid']}"/>" data-response-handler="formatComponentsTable"
-                   data-show-refresh="true" data-show-columns="true" data-search="true" data-detail-view="true"
-                   data-query-params-type="pageSize" data-side-pagination="server" data-pagination="true"
-                   data-page-size="10" data-page-list="[10, 25, 50, 100]"
-                   data-toolbar="#componentsToolbar" data-click-to-select="true" data-height="100%">
-                <thead>
-                <tr>
-                    <th data-align="left" data-field="componenthref">Component</th>
-                    <th data-align="left" data-field="component.version">Version</th>
-                    <th data-align="left" data-field="component.group">Group</th>
-                    <th data-align="left" data-field="component.license">License</th>
-                    <th data-align="left" data-field="vulnerabilities">Vulnerabilities</th>
-                </tr>
-                </thead>
-            </table>
         </div>
     </div>
 
     <!-- Modals specific to a project -->
-    <div class="modal" id="modalCreateComponent" tabindex="-1" role="dialog">
+    <div class="modal" id="modalAddDependency" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">Create Component</h4>
+                    <span class="modal-title">Add Dependency</span>
                 </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label class="sr-only" for="createComponentNameInput">Component Name</label>
-                        <input type="text" name="name" required="true" placeholder="Name..." class="form-control" id="createComponentNameInput">
+                <div class="panel with-nav-tabs panel-default tight panel-with-tabbed-modal-body">
+                    <div class="panel-heading">
+                        <ul class="nav nav-tabs">
+                            <li class="active"><a href="#fromExistingTab" data-toggle="tab">From Existing Component</a></li>
+                            <li><a href="#fromNewTab" data-toggle="tab">From New Component</a></li>
+                        </ul>
                     </div>
-                    <div class="form-group">
-                        <label class="sr-only" for="createComponentVersionInput">Component Version</label>
-                        <input type="text" name="version" required="false" placeholder="Version..." class="form-control" id="createComponentVersionInput">
+                    <div class="panel-body tight">
+                        <div class="tab-content">
+                            <div class="tab-pane active" id="fromExistingTab">
+                                <div class="modal-body">
+                                    <table id="componentsTable" class="table table-hover" data-toggle="table"
+                                           data-url="<c:url value="/api/v1/component"/>" data-response-handler="formatComponentsTable"
+                                           data-search="true" data-click-to-select="true" data-page-size="5"
+                                           data-query-params-type="pageSize" data-side-pagination="server" data-pagination="true">
+                                        <thead>
+                                        <tr>
+                                            <th data-align="center" data-field="state" data-checkbox="true"></th>
+                                            <th data-align="left" data-field="name">Name</th>
+                                            <th data-align="left" data-field="version">Version</th>
+                                            <th data-align="left" data-field="group">Group</th>
+                                        </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="addDependencyFromExistingButton">Add Dependency</button>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="fromNewTab">
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label class="required" for="createComponentNameInput">Component Name</label>
+                                        <input type="text" name="name" required="required" class="form-control required" id="createComponentNameInput">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="required" for="createComponentVersionInput">Version</label>
+                                        <input type="text" name="version" required="required" class="form-control required" id="createComponentVersionInput">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="createComponentGroupInput">Group / Vendor</label>
+                                        <input type="text" name="group" class="form-control" id="createComponentGroupInput">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="createComponentDescriptionInput">Description</label>
+                                        <textarea name="description" class="form-control" id="createComponentDescriptionInput"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="createComponentLicenseSelect">License</label>
+                                        <select name="license" class="selectpicker form-control" title="License / Nothing selected..." data-live-search="true" id="createComponentLicenseSelect">
+                                            <option></option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="addDependencyFromNewButton">Add Dependency</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="sr-only" for="createComponentGroupInput">Component Group</label>
-                        <input type="text" name="group" required="false" placeholder="Group..." class="form-control" id="createComponentGroupInput">
-                    </div>
-                    <div class="form-group">
-                        <label class="sr-only" for="createComponentDescriptionInput">Description</label>
-                        <textarea name="description" required="false" placeholder="Description..." class="form-control" id="createComponentDescriptionInput"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="sr-only" for="createComponentLicenseSelect">License</label>
-                        <select name="license" class="selectpicker form-control" title="License / Nothing selected..." data-live-search="true" id="createComponentLicenseSelect">
-                            <option></option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="createComponentCreateButton">Create</button>
                 </div>
             </div>
         </div>
@@ -144,39 +272,47 @@
         <div class="modal-dialog modal-md" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Project Details</h4>
+                    <span class="modal-title">Project Details</span>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label class="sr-only" for="projectNameInput">Project Name</label>
-                        <input type="text" name="name" required="true" placeholder="Name..." class="form-control" id="projectNameInput">
+                        <label class="required" for="projectNameInput">Project Name</label>
+                        <input type="text" name="name" required="required" class="form-control required require-portfolio-management" disabled="disabled" id="projectNameInput">
                     </div>
                     <div class="form-group">
-                        <label class="sr-only" for="projectVersionInput">Version</label>
-                        <input type="text" name="version" required="false" placeholder="Version..." class="form-control" id="projectVersionInput">
+                        <label for="projectVersionInput">Version</label>
+                        <input type="text" name="version" class="form-control require-portfolio-management" disabled="disabled" id="projectVersionInput">
                     </div>
                     <div class="form-group">
-                        <label class="sr-only" for="projectDescriptionInput">Description</label>
-                        <textarea name="description" required="false" placeholder="Description..." class="form-control" id="projectDescriptionInput"></textarea>
+                        <label for="projectDescriptionInput">Description</label>
+                        <textarea name="description" class="form-control require-portfolio-management" disabled="disabled" id="projectDescriptionInput"></textarea>
                     </div>
                     <div class="form-group">
-                        <label class="sr-only" for="projectTagsInput">Tags</label>
-                        <input type="text" name="tags" placeholder="Tags, comma separated" class="form-control" data-role="tagsinput" id="projectTagsInput">
+                        <label for="projectTagsInput">Tags</label>
+                        <input type="text" name="tags" placeholder="Comma separated" class="form-control require-portfolio-management" disabled="disabled" data-role="tagsinput" id="projectTagsInput">
                     </div>
+                    <table id="projectPropertiesTable" class="table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectPropertiesTableData">
+                        </tbody>
+                    </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="deleteProjectButton">Delete</button>
-                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="updateProjectButton">Update</button>
+                    <button type="button" class="btn btn-danger require-portfolio-management" data-dismiss="modal" id="deleteProjectButton">Delete</button>
+                    <button type="button" class="btn btn-primary require-portfolio-management" data-dismiss="modal" id="updateProjectButton">Update</button>
                     <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
-
-    <jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 </div>
+<jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 <jsp:include page="/WEB-INF/fragments/footer.jsp"/>
-<script type="text/javascript" src="<c:url value="/project/functions.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/project/functions.js"/><%=VERSION_PARAM%>"></script>
 </body>
 </html>

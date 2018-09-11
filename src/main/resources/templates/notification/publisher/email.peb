@@ -1,0 +1,50 @@
+{{ notification.title }}
+
+--------------------------------------------------------------------------------
+{% if notification.group == "NEW_VULNERABILITY" %}
+Vuln ID:   {{ subject.vulnerability.vulnId }}
+Severity:  {{ subject.vulnerability.severity }}
+Source:    {{ subject.vulnerability.source }}
+Component: {{ subject.component.toString }}
+{% elseif notification.group == "NEW_VULNERABLE_DEPENDENCY" %}
+Project:   {{ subject.dependency.project.toString }}
+Component: {{ subject.dependency.component.toString }}
+
+Vulnerabilities
+{% for vulnerability in subject.vulnerabilities %}
+Vuln ID:   {{ vulnerability.vulnId }}
+Severity:  {{ vulnerability.severity }}
+Source:    {{ vulnerability.source }}
+Description:
+{{ vulnerability.description }}
+
+{% endfor %}
+{% elseif notification.group == "GLOBAL_AUDIT_CHANGE" %}
+Analysis Type:  Global Component Analysis
+Analysis State: {{ subject.analysis.analysisState }}
+Suppressed:     {{ subject.analysis.suppressed }}
+Vuln ID:        {{ subject.vulnerability.vulnId }}
+Severity:       {{ subject.vulnerability.severity }}
+Source:         {{ subject.vulnerability.source }}
+Component:      {{ subject.component.toString }}
+{% elseif notification.group == "PROJECT_AUDIT_CHANGE" %}
+Analysis Type:  Project Analysis
+Analysis State: {{ subject.analysis.analysisState }}
+Suppressed:     {{ subject.analysis.suppressed }}
+Vuln ID:        {{ subject.vulnerability.vulnId }}
+Severity:       {{ subject.vulnerability.severity }}
+Source:         {{ subject.vulnerability.source }}
+Component:      {{ subject.component.toString }}
+Project:        {{ subject.project.toString }}
+{% else %}
+Level:     {{ notification.level }}
+Scope:     {{ notification.scope }}
+Group:     {{ notification.group }}
+{% endif %}
+--------------------------------------------------------------------------------
+
+{{ notification.content }}
+
+--------------------------------------------------------------------------------
+
+{{ timestamp }}

@@ -1,6 +1,11 @@
+<%@page import="alpine.Config" %>
 <%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="e" uri="https://www.owasp.org/index.php/OWASP_Java_Encoder_Project" %>
+<%!
+    private static final String BUILD_ID = Config.getInstance().getApplicationBuildUuid();
+    private static final String VERSION_PARAM = "?v=" + BUILD_ID;
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +14,7 @@
 </head>
 <body data-sidebar="licenses">
 <jsp:include page="/WEB-INF/fragments/navbar.jsp"/>
-<div class="container-fluid">
+<div id="content-container" class="container-fluid require-view-portfolio">
     <div class="content-row main">
         <div class="col-sm-12 col-md-12">
             <h3>Licenses</h3>
@@ -22,7 +27,7 @@
                                     <i class="fa fa-shield fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">206</div>
+                                    <div class="huge" id="statPortfolioVulnerabilities">-</div>
                                     <div>Portfolio Vulnerabilities</div>
                                 </div>
                             </div>
@@ -41,10 +46,10 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-3">
-                                    <i class="fa fa-thermometer-half  fa-5x"></i>
+                                    <i class="fa fa-sitemap  fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">15</div>
+                                    <div class="huge" id="statVulnerableProjects">-</div>
                                     <div>Projects at Risk</div>
                                 </div>
                             </div>
@@ -63,11 +68,11 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-3">
-                                    <i class="fa fa-balance-scale fa-5x"></i>
+                                    <i class="fa fa-cubes  fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">26</div>
-                                    <div>Policy Violations</div>
+                                    <div class="huge" id="statVulnerableComponents">-</div>
+                                    <div>Vulnerable Components</div>
                                 </div>
                             </div>
                         </div>
@@ -85,11 +90,11 @@
                         <div class="panel-heading">
                             <div class="row">
                                 <div class="col-xs-3">
-                                    <i class="fa fa-bell fa-5x"></i>
+                                    <i class="fa fa-thermometer-half fa-5x"></i>
                                 </div>
                                 <div class="col-xs-9 text-right">
-                                    <div class="huge">5</div>
-                                    <div>Recent Alerts</div>
+                                    <div class="huge" id="statInheritedRiskScore">-</div>
+                                    <div>Inherited Risk Score</div>
                                 </div>
                             </div>
                         </div>
@@ -109,12 +114,12 @@
                    data-url="<c:url value="/api/v1/license"/>" data-response-handler="formatLicensesTable"
                    data-show-refresh="true" data-show-columns="true" data-search="true" data-detail-view="true"
                    data-query-params-type="pageSize" data-side-pagination="server" data-pagination="true"
-                   data-page-size="10" data-page-list="[10, 25, 50, 100]"
+                   data-silent-sort="false" data-page-size="10" data-page-list="[10, 25, 50, 100]"
                    data-click-to-select="true" data-height="100%">
                 <thead>
                 <tr>
-                    <th data-align="left" data-field="name">Name</th>
-                    <th data-align="left" data-field="licensehref">SPDX License ID</th>
+                    <th data-align="left" data-field="name" data-sortable="true">Name</th>
+                    <th data-align="left" data-field="licensehref" data-sort-name="licenseId" data-sortable="true">SPDX License ID</th>
                     <th data-align="center" data-field="osiApprovedLabel" data-class="tight">OSI Approved</th>
                 </tr>
                 </thead>
@@ -122,10 +127,9 @@
 
         </div> <!-- /main-row> -->
     </div>
-
-    <jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 </div>
+<jsp:include page="/WEB-INF/fragments/common-modals.jsp"/>
 <jsp:include page="/WEB-INF/fragments/footer.jsp"/>
-<script type="text/javascript" src="<c:url value="/licenses/functions.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/licenses/functions.js"/><%=VERSION_PARAM%>"></script>
 </body>
 </html>

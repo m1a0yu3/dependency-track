@@ -23,16 +23,25 @@
          version="3.1">
 
     <listener>
+        <listener-class>org.dependencytrack.RequirementsVerifier</listener-class>
+    </listener>
+    <listener>
         <listener-class>alpine.persistence.PersistenceInitializer</listener-class>
     </listener>
     <listener>
         <listener-class>alpine.persistence.PersistenceManagerFactory</listener-class>
     </listener>
     <listener>
-        <listener-class>org.owasp.dependencytrack.event.EventSubsystemInitializer</listener-class>
+        <listener-class>org.dependencytrack.upgrade.UpgradeInitializer</listener-class>
     </listener>
     <listener>
-        <listener-class>org.owasp.dependencytrack.persistence.DefaultObjectGenerator</listener-class>
+        <listener-class>org.dependencytrack.event.EventSubsystemInitializer</listener-class>
+    </listener>
+    <listener>
+        <listener-class>org.dependencytrack.persistence.DefaultObjectGenerator</listener-class>
+    </listener>
+    <listener>
+        <listener-class>org.dependencytrack.notification.NotificationSubsystemInitializer</listener-class>
     </listener>
 
     <filter>
@@ -83,7 +92,7 @@
         <servlet-class>alpine.AlpineServlet</servlet-class>
         <init-param>
             <param-name>jersey.config.server.provider.packages</param-name>
-            <param-value>io.swagger.jaxrs.listing,alpine.filters,org.owasp.dependencytrack.resources,org.owasp.dependencytrack.filters</param-value>
+            <param-value>io.swagger.jaxrs.listing,alpine.filters,alpine.resources,org.dependencytrack.resources,org.dependencytrack.filters</param-value>
         </init-param>
         <init-param>
             <param-name>jersey.config.server.provider.classnames</param-name>
@@ -103,5 +112,31 @@
         <servlet-name>DependencyTrack</servlet-name>
         <url-pattern>/api/*</url-pattern>
     </servlet-mapping>
+
+    <servlet>
+        <servlet-name>NVD Mirror</servlet-name>
+        <servlet-class>org.dependencytrack.servlets.NvdMirrorServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>NVD Mirror</servlet-name>
+        <url-pattern>/mirror/nvd/*</url-pattern>
+    </servlet-mapping>
+
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/WEB-INF/fragments/error.jsp</location>
+    </error-page>
+
+    <session-config>
+        <session-timeout>1</session-timeout>
+        <cookie-config>
+            <name>DEPENDENCY-TRACK_JSESSIONID</name>
+            <http-only>true</http-only>
+            <!-- <secure>true</secure> -->
+            <max-age>0</max-age>
+        </cookie-config>
+        <tracking-mode>COOKIE</tracking-mode>
+    </session-config>
 
 </web-app>

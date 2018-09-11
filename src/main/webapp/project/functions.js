@@ -19,11 +19,17 @@
 "use strict";
 
 /**
- * Called by bootstrap table to format the data in the components table.
+ * Called by bootstrap table to format the data in the dependencies table.
  */
-function formatComponentsTable(res) {
-    let componentsTable = $("#componentsTable");
+function formatDependenciesTable(res) {
+    let projectUuid = $.getUrlVar("uuid");
+    let dependenciesTable = $("#dependenciesTable");
     for (let i=0; i<res.length; i++) {
+
+        if (res[i].component.hasOwnProperty("purl") && res[i].component.hasOwnProperty("version")) {
+            $rest.getLatestFromRepository(res[i].component.purl, updateDependencyRowWithLatest(i, res[i]));
+        }
+
         let componenturl = "../component/?uuid=" + res[i].component.uuid;
         res[i].componenthref = "<a href=\"" + componenturl + "\">" + filterXSS(res[i].component.name)+ "</a>";
         res[i].component.version = filterXSS(res[i].component.version);
@@ -34,9 +40,9 @@ function formatComponentsTable(res) {
             res[i].component.license = "<a href=\"" + licenseurl + "\">" + filterXSS(res[i].component.resolvedLicense.licenseId) + "</a>";
         }
 
-        $rest.getComponentCurrentMetrics(res[i].component.uuid, function (data) {
+        $rest.getDependencyCurrentMetrics(projectUuid, res[i].component.uuid, function (data) {
             res[i].component.vulnerabilities = $common.generateSeverityProgressBar(data.critical, data.high, data.medium, data.low);
-            componentsTable.bootstrapTable("updateRow", {
+            dependenciesTable.bootstrapTable("updateRow", {
                 index: i,
                 row: res[i].component
             });
@@ -45,12 +51,222 @@ function formatComponentsTable(res) {
     return res;
 }
 
+function updateDependencyRowWithLatest(rowNumber, rowData) {
+    return function (data) {
+        const dependenciesTable = $("#dependenciesTable");
+        if (data.hasOwnProperty("latestVersion")) {
+            if (data.latestVersion !== rowData.component.version) {
+                rowData.component.version = '<span style="float:right" data-toggle="tooltip" data-placement="bottom" title="Risk: Outdated component. Current version is: '+ filterXSS(data.latestVersion) + '"><i class="fa fa-exclamation-triangle status-warning" aria-hidden="true"></i></span> ' + filterXSS(rowData.component.version);
+            } else {
+                rowData.component.version = '<span style="float:right" data-toggle="tooltip" data-placement="bottom" title="Component version is the latest available from the configured repositories"><i class="fa fa-exclamation-triangle status-passed" aria-hidden="true"></i></span> ' + filterXSS(rowData.component.version);
+            }
+            rowData.latestVersion = filterXSS(data.latestVersion);
+        }
+        dependenciesTable.bootstrapTable("updateRow", {index: rowNumber, row: rowData});
+    };
+}
+
 /**
- * Called when a component is successfully created
+ * Called by bootstrap table to format the data in the components table (when adding a new dependency from an existing component).
  */
-function componentCreated() {
-    $("#projectsTable").bootstrapTable("refresh", {silent: true});
-    clearInputFields();
+function formatComponentsTable(res) {
+    for (let i=0; i<res.length; i++) {
+        res[i].name = filterXSS(res[i].name);
+        res[i].version = filterXSS(res[i].version);
+        res[i].group = filterXSS(res[i].group);
+    }
+    return res;
+}
+
+/**
+ * Called by bootstrap table to format the data in the findings table.
+ */
+function formatFindingsTable(res) {
+    for (let i=0; i<res.length; i++) {
+        let vulnurl = "../vulnerability/?source=" + res[i].source + "&vulnId=" + res[i].vulnId;
+        res[i].vulnerabilityhref = $common.formatSourceLabel(res[i].source) + " <a href=\"" + vulnurl + "\">" + filterXSS(res[i].vulnId) + "</a>";
+
+        if (res[i].hasOwnProperty("cweId") && res[i].hasOwnProperty("cweName")) {
+            res[i].cwefield = "<div class='truncate-ellipsis'><span>CWE-" + res[i].cweId + " " + res[i].cweName + "</span></div>";
+        }
+
+        if (res[i].hasOwnProperty("severity")) {
+            res[i].severityLabel = $common.formatSeverityLabel(res[i].severity);
+        }
+
+        if (res[i].hasOwnProperty("isSuppressed") && res[i].isSuppressed === true) {
+            res[i].isSuppressedLabel = '<i class="fa fa-check-square-o" aria-hidden="true"></i>';
+        } else {
+            res[i].isSuppressedLabel = '';
+        }
+    }
+    return res;
+}
+
+/**
+ * Function called by bootstrap table when row is clicked/touched, and
+ * expanded. This function handles the dynamic creation of the expanded
+ * view with simple inline templates.
+ */
+function findingDetailFormatter(index, row) {
+    let projectUuid = $.getUrlVar("uuid");
+    let html = [];
+    let template = `
+    <div class="col-sm-6 col-md-6">
+    <form id="form-${row.uuid}">
+        <div class="form-group" style="display:none" id="group-title-${row.componentUuid}-${row.vulnUuid}">
+            <label for="title-${row.componentUuid}-${row.vulnUuid}">Title</label>
+            <input type="text" class="form-control" disabled="disabled" id="title-${row.componentUuid}-${row.vulnUuid}" value="" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}">
+        </div>
+        <div class="form-group" style="display:none" id="group-subtitle-${row.componentUuid}-${row.vulnUuid}">
+            <label for="subtitle-${row.componentUuid}-${row.vulnUuid}">Subtitle</label>
+            <input type="text" class="form-control" disabled="disabled" id="subtitle-${row.componentUuid}-${row.vulnUuid}" value="" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}">
+        </div>
+        <div class="form-group" style="display:none" id="group-description-${row.componentUuid}-${row.vulnUuid}">
+            <label for="description-${row.componentUuid}-${row.vulnUuid}">Description</label>
+            <textarea class="form-control" disabled="disabled" rows="7" id="description-${row.componentUuid}-${row.vulnUuid}" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}"></textarea>
+        </div>
+        <div class="form-group" style="display:none" id="group-recommendation-${row.componentUuid}-${row.vulnUuid}">
+            <label for="recommendation-${row.componentUuid}-${row.vulnUuid}">Recommendation</label>
+            <textarea class="form-control" disabled="disabled" rows="7" id="recommendation-${row.componentUuid}-${row.vulnUuid}" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}"></textarea>
+        </div>
+        <div class="form-group" style="display:none" id="group-cvssV2Vector-${row.componentUuid}-${row.vulnUuid}">
+            <label for="cvssV2Vector-${row.componentUuid}-${row.vulnUuid}">CVSSv2 Vector</label>
+            <input type="text" class="form-control" disabled="disabled" id="cvssV2Vector-${row.componentUuid}-${row.vulnUuid}" value="" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}">
+        </div>
+        <div class="form-group" style="display:none" id="group-cvssV3Vector-${row.componentUuid}-${row.vulnUuid}">
+            <label for="cvssV3Vector-${row.componentUuid}-${row.vulnUuid}">CVSSv3 Vector</label>
+            <input type="text" class="form-control" disabled="disabled" id="cvssV3Vector-${row.componentUuid}-${row.vulnUuid}" value="" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}">
+        </div>
+    </div>
+    <div class="col-sm-6 col-md-6">
+        <div class="form-group">
+            <label for="audit-trail-${projectUuid}-${row.componentUuid}-${row.vulnUuid}">Audit Trail</label>
+            <textarea class="form-control" disabled="disabled" rows="7" id="audit-trail-${projectUuid}-${row.componentUuid}-${row.vulnUuid}" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="comment-${projectUuid}-${row.componentUuid}-${row.vulnUuid}">Comment</label>
+            <textarea class="form-control" rows="3" id="comment-${projectUuid}-${row.componentUuid}-${row.vulnUuid}" data-component-uuid="${row.componentUuid}" data-vuln-uuid="${row.vulnUuid}"></textarea>
+            <div class="pull-right">
+                <button id="addCommentButton-${projectUuid}-${row.componentUuid}-${row.vulnUuid}" class="btn btn-xs btn-warning"><span class="fa fa-comment-o"></span> Add Comment</button>
+            </div>
+        </div>     
+        <div class="col-xs-6 input-group">
+            <label for="analysis-${projectUuid}-${row.componentUuid}-${row.vulnUuid}">Analysis</label>
+            <select class="form-control" style="background-color:#ffffff" id="analysis-${projectUuid}-${row.componentUuid}-${row.vulnUuid}">
+                <option value="NOT_SET"></option>
+                <option value="EXPLOITABLE">Exploitable</option>
+                <option value="IN_TRIAGE">In Triage</option>
+                <option value="FALSE_POSITIVE">False Positive</option>
+                <option value="NOT_AFFECTED">Not Affected</option>
+            </select>
+            <span class="input-group-btn" style="vertical-align:bottom; padding-left:20px">
+                <input id="suppressButton-${projectUuid}-${row.componentUuid}-${row.vulnUuid}" type="checkbox" data-toggle="toggle" data-on="<i class='fa fa-eye-slash'></i> Suppressed" data-off="<i class='fa fa-eye'></i> Suppress">
+            </span>
+        </div>
+    </form>
+    </div>
+    <script type="text/javascript">
+       initializeSuppressButton("#suppressButton-${projectUuid}-${row.componentUuid}-${row.vulnUuid}", ${row.isSuppressed});
+       $("#suppressButton-${projectUuid}-${row.componentUuid}-${row.vulnUuid}").on("change", function() {
+           let isSuppressed = $("#suppressButton-${projectUuid}-${row.componentUuid}-${row.vulnUuid}").is(':checked');
+           let analysis = $("#analysis-${projectUuid}-${row.componentUuid}-${row.vulnUuid}").val();
+           $rest.makeAnalysis("${projectUuid}", "${row.componentUuid}", "${row.vulnUuid}", analysis, null, isSuppressed, function() {
+               updateAnalysisPanel("${projectUuid}", "${row.componentUuid}", "${row.vulnUuid}");
+               $rest.refreshDependencyMetrics("${projectUuid}", "${row.componentUuid}");
+           });
+       });
+       
+       $("#analysis-${projectUuid}-${row.componentUuid}-${row.vulnUuid}").on("change", function() {
+           $rest.makeAnalysis("${projectUuid}", "${row.componentUuid}", "${row.vulnUuid}", this.value, null, null, function() {
+               updateAnalysisPanel("${projectUuid}", "${row.componentUuid}", "${row.vulnUuid}");
+           });
+       });
+       $("#addCommentButton-${projectUuid}-${row.componentUuid}-${row.vulnUuid}").on("click", function() {
+           let analysis = $("#analysis-${projectUuid}-${row.componentUuid}-${row.vulnUuid}").val();
+           let comment = $("#comment-${projectUuid}-${row.componentUuid}-${row.vulnUuid}").val();
+           $rest.makeAnalysis("${projectUuid}", "${row.componentUuid}", "${row.vulnUuid}", analysis, comment, null, function() {
+               updateAnalysisPanel("${projectUuid}", "${row.componentUuid}", "${row.vulnUuid}");
+           });
+       });
+    </script>
+`;
+    html.push(template);
+
+    $rest.getVulnerabilityByUuid(row.vulnUuid, function(vuln) {
+        if (vuln.hasOwnProperty("title")) {
+            $("#group-title-" + row.componentUuid + "-" + row.vulnUuid).css("display", "block");
+            $("#title-" + row.componentUuid + "-" + row.vulnUuid).val(filterXSS(vuln.title));
+        }
+        if (vuln.hasOwnProperty("subTitle")) {
+            $("#group-subTitle-" + row.componentUuid + "-" + row.vulnUuid).css("display", "block");
+            $("#subTitle-" + row.componentUuid + "-" + row.vulnUuid).val(filterXSS(vuln.subTitle));
+        }
+        if (vuln.hasOwnProperty("description")) {
+            $("#group-description-" + row.componentUuid + "-" + row.vulnUuid).css("display", "block");
+            $("#description-" + row.componentUuid + "-" + row.vulnUuid).val(vuln.description);
+        }
+        if (vuln.hasOwnProperty("recommendation")) {
+            $("#group-recommendation-" + row.componentUuid + "-" + row.vulnUuid).css("display", "block");
+            $("#recommendation-" + row.componentUuid + "-" + row.vulnUuid).val(vuln.recommendation);
+        }
+        if (vuln.hasOwnProperty("cvssV2Vector")) {
+            $("#group-cvssV2Vector-" + row.componentUuid + "-" + row.vulnUuid).css("display", "block");
+            $("#cvssV2Vector-" + row.componentUuid + "-" + row.vulnUuid).val(filterXSS(vuln.cvssV2Vector));
+        }
+        if (vuln.hasOwnProperty("cvssV3Vector")) {
+            $("#group-cvssV3Vector-" + row.componentUuid + "-" + row.vulnUuid).css("display", "block");
+            $("#cvssV3Vector-" + row.componentUuid + "-" + row.vulnUuid).val(filterXSS(vuln.cvssV3Vector));
+        }
+    });
+
+    updateAnalysisPanel(projectUuid, row.componentUuid, row.vulnUuid);
+    return html.join("");
+}
+
+function initializeSuppressButton(selector, defaultValue) {
+    let suppressButton = $(selector);
+    if (defaultValue === true) {
+        suppressButton.bootstrapToggle("on");
+    } else {
+        suppressButton.bootstrapToggle("off");
+    }
+}
+
+function updateAnalysisPanel(projectUuid, componentUuid, vulnUuid) {
+    $rest.getAnalysis(projectUuid, componentUuid, vulnUuid, function(analysis) {
+        if (analysis) {
+            if (analysis.hasOwnProperty("analysisComments")) {
+                let auditTrail = "";
+                for (let i = 0; i < analysis.analysisComments.length; i++) {
+                    if (analysis.analysisComments[i].hasOwnProperty("commenter")) {
+                        auditTrail += analysis.analysisComments[i].commenter + " - ";
+                    }
+                    auditTrail += $common.formatTimestamp(analysis.analysisComments[i].timestamp, true);
+                    auditTrail += "\n";
+                    auditTrail += analysis.analysisComments[i].comment;
+                    auditTrail += "\n\n";
+                }
+                let textarea = $("#audit-trail-" + projectUuid + "-" + componentUuid + "-" + vulnUuid);
+                textarea.val(filterXSS(auditTrail));
+                textarea.scrollTop(textarea[0].scrollHeight);
+            }
+            if (analysis.hasOwnProperty("analysisState")) {
+                $("#analysis-" + projectUuid + "-" + componentUuid + "-" + vulnUuid).val(analysis.analysisState);
+            }
+            if (analysis.hasOwnProperty("isSuppressed")) {
+                let suppressButton = $("#suppressButton-" + projectUuid + "-" + componentUuid + "-" + vulnUuid);
+                let isSuppressed = suppressButton.is(':checked');
+                if (isSuppressed !== analysis.isSuppressed) {
+                    if (analysis.isSuppressed) {
+                        suppressButton.bootstrapToggle("on")
+                    } else {
+                        suppressButton.bootstrapToggle("off")
+                    }
+                }
+            }
+        }
+    });
 }
 
 /**
@@ -72,13 +288,29 @@ function tagsStringToObjectArray(tagsString) {
  * Clears all the input fields from the modal.
  */
 function clearInputFields() {
-    $("#createProjectNameInput").val("");
-    $("#createProjectVersionInput").val("");
-    $("#createProjectDescriptionInput").val("");
-    $("#createProjectTagsInput").val("");
+    $("#createComponentNameInput").val("");
+    $("#createComponentVersionInput").val("");
+    $("#createComponentGroupInput").val("");
+    $("#createComponentDescriptionInput").val("");
+    $("#createComponentLicenseSelect").val("");
 }
 
 function populateProjectData(data) {
+
+    // Retrieve the list of project versions and determine which one should be selected
+    $rest.getProjectVersions(data.name, function (versionData) {
+        let select = $("#projectVersionSelect");
+        $.each(versionData, function() {
+            let escapedProjectVersion = filterXSS(this.version);
+            if (this.version === data.version) {
+                select.append($("<option selected=\"selected\"/>").val(this.uuid).text(escapedProjectVersion));
+            } else {
+                select.append($("<option />").val(this.uuid).text(escapedProjectVersion));
+            }
+        });
+        select.selectpicker('refresh');
+    });
+
     let escapedProjectName = filterXSS(data.name);
     let escapedProjectVersion = filterXSS(data.version);
     let escapedProjectDescription = filterXSS(data.description);
@@ -105,6 +337,18 @@ function populateProjectData(data) {
     } else {
         $("#tags").empty();
     }
+    if (data.properties) {
+        $("#projectPropertiesTable").css("display", "table");
+        let html = "";
+        for (let i=0; i<data.properties.length; i++) {
+            let property = data.properties[i];
+            html += `<tr><td>${filterXSS(property.key)}</td><td>${filterXSS(property.value)}</td></tr>`;
+        }
+        $("#projectPropertiesTableData").html(html);
+    } else {
+        $("#projectPropertiesTableData").empty();
+        $("#projectPropertiesTable").css("display", "none");
+    }
 }
 
 function populateLicenseData(data) {
@@ -115,12 +359,29 @@ function populateLicenseData(data) {
     select.selectpicker("refresh");
 }
 
-function populateMetrics(data) {
-    $("#metricCritical").html(filterXSS(data.critical));
-    $("#metricHigh").html(filterXSS(data.high));
-    $("#metricMedium").html(filterXSS(data.medium));
-    $("#metricLow").html(filterXSS(data.low));
-    $("#metricIrs").html(filterXSS(data.inheritedRiskScore));
+function populateMetrics(metric) {
+    $("#metricCritical").html(filterXSS($common.valueWithDefault(metric.critical, "0")));
+    $("#metricHigh").html(filterXSS($common.valueWithDefault(metric.high, "0")));
+    $("#metricMedium").html(filterXSS($common.valueWithDefault(metric.medium, "0")));
+    $("#metricLow").html(filterXSS($common.valueWithDefault(metric.low, "0")));
+    $("#metricIrs").html(filterXSS($common.valueWithDefault(metric.inheritedRiskScore, "0")));
+
+    $("#statTotalComponents").html(filterXSS($common.valueWithDefault(metric.components, "0")));
+    $("#statVulnerableComponents").html(filterXSS($common.valueWithDefault(metric.vulnerableComponents, "0")));
+    $("#statVulnerabilities").html(filterXSS($common.valueWithDefault(metric.vulnerabilities, "0")));
+    $("#statSuppressed").html(filterXSS($common.valueWithDefault(metric.suppressed, "0")));
+    if (metric.hasOwnProperty("lastOccurrence")) {
+        $("#statLastMeasurement").html(filterXSS($common.formatTimestamp(metric.lastOccurrence, true)));
+    }
+}
+
+function getTrendData() {
+    let uuid = $.getUrlVar("uuid");
+    d3.selectAll(".nvtooltip").remove();
+    $rest.getProjectMetrics(uuid, 90, function(metrics) {
+        $chart.createSeverityTrendChart(metrics, "projectchart", "Project Vulnerabilities");
+        $chart.createAffectedVsTotalTrendChart(metrics, "componentchart", "Components", "vulnerableComponents", "components", "Vulnerable Components", "Total Components");
+    });
 }
 
 /**
@@ -129,23 +390,66 @@ function populateMetrics(data) {
 $(document).ready(function () {
     let uuid = $.getUrlVar("uuid");
 
+    const token = $auth.decodeToken($auth.getToken());
+    if ($auth.hasPermission($auth.VULNERABILITY_ANALYSIS, token)) {
+        const findingsUrl = $rest.contextPath() + URL_FINDING + "/project/" + uuid;
+        $("#findingsTable").bootstrapTable("refresh", {url: findingsUrl, silent: true});
+    }
+
     $rest.getProject(uuid, populateProjectData);
     $rest.getLicenses(populateLicenseData);
     $rest.getProjectCurrentMetrics(uuid, populateMetrics);
 
-    // Listen for when the button to create a project is clicked
-    $("#createComponentCreateButton").on("click", function () {
+    // Listen for when the button to add a dependency from a new component is clicked
+    $("#addDependencyFromNewButton").on("click", function () {
         const name = $("#createComponentNameInput").val();
         const version = $("#createComponentVersionInput").val();
         const group = $("#createComponentGroupInput").val();
         const description = $("#createComponentDescriptionInput").val();
         const licenseId = $("#createComponentLicenseSelect").val();
-        $rest.createComponent(name, version, group, description, licenseId, componentCreated(), clearInputFields());
+        $rest.createComponentMinimalFields(name, version, group, description, licenseId, function(data) {
+            $rest.addDependency(uuid, [data.uuid], null, function() {
+                $("#dependenciesTable").bootstrapTable("refresh", {silent: true});
+            });
+        });
+        $("#modalAddDependency").modal("hide");
+        $("#componentsTable").bootstrapTable("uncheckAll");
+        clearInputFields();
+    });
+
+    // Listen for when the button to add a dependency from an existing component is clicked
+    $("#addDependencyFromExistingButton").on("click", function () {
+        let componentsTable = $("#componentsTable");
+        let selections = componentsTable.bootstrapTable("getSelections");
+        let componentUuids = [];
+        for (let i=0; i<selections.length; i++) {
+            componentUuids[i] = selections[i].uuid;
+        }
+        $rest.addDependency(uuid, componentUuids, null, function() {
+            $("#dependenciesTable").bootstrapTable("refresh", {silent: true});
+        });
+        $("#modalAddDependency").modal("hide");
+        componentsTable.bootstrapTable("uncheckAll");
+        clearInputFields();
     });
 
     // When modal closes, clear out the input fields
-    $("#modalCreateComponent").on("hidden.bs.modal", function () {
-        $("#createComponentNameInput").val("");
+    $("#modalAddDependency").on("hidden.bs.modal", function () {
+        clearInputFields();
+    });
+
+    // Listen for when the button to remove a dependency is clicked
+    $("#removeDependencyButton").on("click", function () {
+        let dependenciesTable = $("#dependenciesTable");
+        let selections = dependenciesTable.bootstrapTable("getSelections");
+        let componentUuids = [];
+        for (let i=0; i<selections.length; i++) {
+            componentUuids[i] = selections[i].uuid;
+        }
+        $rest.removeDependency(uuid, componentUuids, function() {
+            $("#dependenciesTable").bootstrapTable("refresh", {silent: true});
+        });
+        dependenciesTable.bootstrapTable("uncheckAll");
     });
 
     $("#updateProjectButton").on("click", function () {
@@ -164,4 +468,46 @@ $(document).ready(function () {
         });
     });
 
+    $("#projectVersionSelect").on("change", function () {
+        let uuid = $("#projectVersionSelect").val();
+        window.location.href = "?uuid=" + uuid;
+    });
+
+    getTrendData();
+
+    // Listen for refresh icon to be triggered
+    $("#refresh").on("click", function() {
+        $rest.refreshProjectMetrics(uuid, function() {
+            $("#statLastMeasurement").html("Refresh triggered");
+            $common.displayInfoModal("A refresh has been requested. The amount of time required to refresh is dependant on the amount of background processing currently being performed and the size of the data-set being refreshed.")
+        });
+    });
+
+    const findingsTable = $("#findingsTable");
+    findingsTable.on("click-row.bs.table", function(e, row, $tr) {
+        if ($tr.next().is("tr.detail-view")) {
+            findingsTable.bootstrapTable("collapseRow", $tr.data("index"));
+            findingsTable.expanded = false;
+        } else {
+            findingsTable.bootstrapTable("collapseAllRows");
+            findingsTable.bootstrapTable("expandRow", $tr.data("index"));
+            findingsTable.expanded = true;
+            findingsTable.expandedUuid = row.uuid;
+        }
+    });
+
+    findingsTable.on("load-success.bs.table", function(e, data) {
+        if (findingsTable.expanded === true) {
+            $.each(data, function(i, team) {
+                if (team.uuid === findingsTable.expandedUuid) {
+                    findingsTable.bootstrapTable("expandRow", i);
+                }
+            });
+        }
+    });
+
+    const dependenciesTable = $("#dependenciesTable");
+    dependenciesTable.on("post-body.bs.table", function(e, data) {
+        $('[data-toggle="tooltip"]').tooltip();
+    });
 });

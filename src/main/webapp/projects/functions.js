@@ -26,6 +26,15 @@ function formatProjectsTable(res) {
     for (let i=0; i<res.length; i++) {
         let projecturl = "../project/?uuid=" + res[i].uuid;
         res[i].projecthref = "<a href=\"" + projecturl + "\">" + filterXSS(res[i].name) + "</a>";
+        res[i].version = filterXSS(res[i].version);
+
+        if (res[i].hasOwnProperty("lastScanImport")) {
+            res[i].lastScanImportLabel = $common.formatTimestamp(res[i].lastScanImport, true);
+        }
+
+        if (res[i].hasOwnProperty("lastBomImport")) {
+            res[i].lastBomImportLabel = $common.formatTimestamp(res[i].lastBomImport, true);
+        }
 
         $rest.getProjectCurrentMetrics(res[i].uuid, function (data) {
             res[i].vulnerabilities = $common.generateSeverityProgressBar(data.critical, data.high, data.medium, data.low);
@@ -49,7 +58,17 @@ function clearInputFields() {
     $("#createProjectNameInput").val("");
     $("#createProjectVersionInput").val("");
     $("#createProjectDescriptionInput").val("");
-    $("#createProjectTagsInput").val("");
+    $("#createProjectTagsInput").tagsinput("removeAll");
+}
+
+function updateStats(metric) {
+    $("#statTotalProjects").html(metric.projects);
+    $("#statVulnerableProjects").html(metric.vulnerableProjects);
+    $("#statTotalComponents").html(metric.components);
+    $("#statVulnerableComponents").html(metric.vulnerableComponents);
+    $("#statPortfolioVulnerabilities").html(metric.vulnerabilities);
+    $("#statLastMeasurement").html(filterXSS($common.formatTimestamp(metric.lastOccurrence, true)));
+    $("#statInheritedRiskScore").html(metric.inheritedRiskScore);
 }
 
 /**
@@ -63,6 +82,10 @@ $(document).ready(function () {
             silent: true
         });
     }
+
+    $rest.getPortfolioCurrentMetrics(function(metrics) {
+        updateStats(metrics);
+    });
 
     // Initialize all tooltips
     $('[data-toggle="tooltip"]').tooltip();

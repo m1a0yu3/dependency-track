@@ -22,43 +22,30 @@
              xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd" version="1.0">
 
     <persistence-unit name="Alpine">
-        <class>org.owasp.dependencytrack.model.Analysis</class>
-        <class>org.owasp.dependencytrack.model.AnalysisComment</class>
-        <class>org.owasp.dependencytrack.model.Component</class>
-        <class>org.owasp.dependencytrack.model.ComponentMetrics</class>
-        <class>org.owasp.dependencytrack.model.Cwe</class>
-        <class>org.owasp.dependencytrack.model.Dependency</class>
-        <class>org.owasp.dependencytrack.model.Evidence</class>
-        <class>org.owasp.dependencytrack.model.License</class>
-        <class>org.owasp.dependencytrack.model.PortfolioMetrics</class>
-        <class>org.owasp.dependencytrack.model.Project</class>
-        <class>org.owasp.dependencytrack.model.ProjectMetrics</class>
-        <class>org.owasp.dependencytrack.model.ProjectProperty</class>
-        <class>org.owasp.dependencytrack.model.Scan</class>
-        <class>org.owasp.dependencytrack.model.Tag</class>
-        <class>org.owasp.dependencytrack.model.Vulnerability</class>
-        <class>org.owasp.dependencytrack.model.VulnerabilityMetrics</class>
+        <class>org.dependencytrack.model.Analysis</class>
+        <class>org.dependencytrack.model.AnalysisComment</class>
+        <class>org.dependencytrack.model.Bom</class>
+        <class>org.dependencytrack.model.Component</class>
+        <class>org.dependencytrack.model.ComponentMetrics</class>
+        <class>org.dependencytrack.model.Cwe</class>
+        <class>org.dependencytrack.model.Dependency</class>
+        <class>org.dependencytrack.model.DependencyMetrics</class>
+        <class>org.dependencytrack.model.Evidence</class>
+        <class>org.dependencytrack.model.License</class>
+        <class>org.dependencytrack.model.NotificationPublisher</class>
+        <class>org.dependencytrack.model.NotificationRule</class>
+        <class>org.dependencytrack.model.PortfolioMetrics</class>
+        <class>org.dependencytrack.model.Project</class>
+        <class>org.dependencytrack.model.ProjectMetrics</class>
+        <class>org.dependencytrack.model.ProjectProperty</class>
+        <class>org.dependencytrack.model.Repository</class>
+        <class>org.dependencytrack.model.RepositoryMetaComponent</class>
+        <class>org.dependencytrack.model.Scan</class>
+        <class>org.dependencytrack.model.Tag</class>
+        <class>org.dependencytrack.model.Vulnerability</class>
+        <class>org.dependencytrack.model.VulnerabilityMetrics</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
-
-        <properties>
-            <property name="javax.jdo.option.ConnectionURL" value="jdbc:h2:~/.dependency-track/db"/>
-            <property name="javax.jdo.option.ConnectionDriverName" value="org.h2.Driver"/>
-            <property name="javax.jdo.option.ConnectionUserName" value="sa"/>
-            <property name="javax.jdo.option.ConnectionPassword" value=""/>
-            <property name="javax.jdo.option.Mapping" value="h2"/>
-            <property name="javax.jdo.option.NontransactionalRead" value="true"/>
-            <property name="javax.jdo.option.NontransactionalWrite" value="true"/>
-            <property name="datanucleus.connectionPoolingType" value="DBCP2"/>
-            <property name="datanucleus.schema.autoCreateSchema" value="true"/>
-            <property name="datanucleus.schema.autoCreateTables" value="true"/>
-            <property name="datanucleus.schema.autoCreateColumns" value="true"/>
-            <property name="datanucleus.schema.autoCreateConstraints" value="true"/>
-            <property name="datanucleus.generateSchema.database.mode" value="create"/>
-            <property name="datanucleus.query.jdoql.allowAll" value="true"/>
-            <!-- <property name="datanucleus.nontx.atomic" value="true"/> -->
-        </properties>
-
     </persistence-unit>
 
 </persistence>

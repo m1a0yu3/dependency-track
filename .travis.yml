@@ -12,7 +12,22 @@ addons:
     build_command_prepend: 
     build_command: mvn clean package
     branch_pattern: coverity_scan
-script: mvn clean package
+
+before_script:
+  - export REPO=owasp/dependency-track
+  - export TAG=`if [ "$TRAVIS_BRANCH" == "master" ]; then echo "snapshot"; else echo $TRAVIS_BRANCH ; fi`
+
+script:
+  - mvn clean package
+  - mvn package -P embedded-jetty -Dlogback.configuration.file=src/main/docker/logback.xml
+  - docker build -f src/main/docker/Dockerfile -t $REPO:$TAG .
+
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD";
+    docker push $REPO;
+    fi
+
 notifications:
   slack:
     secure: FtU/UJX7A904c3JgrQ9AE5zYWO8gIMhzAfL8MFRbUd2AfFbNNpb1OaEbIr61Ho0V/HpBYiL/4YDaINKhy/VeUyz1hqAQingvwip6XrblpoEV2bGXZNVOLW72/z41qNwZ2q7Ebx3F1L1jHSUUPBs91FaqWWpwVNXi5FWPT7OkGv0=

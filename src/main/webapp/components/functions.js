@@ -53,48 +53,86 @@ function componentCreated(data) {
  * Clears all the input fields from the modal.
  */
 function clearInputFields() {
-    $("#createComponentNameInput").val("");
-    $("#createComponentVersionInput").val("");
-    $("#createComponentGroupInput").val("");
-    $("#createComponentDescriptionInput").val("");
-    $("#createComponentLicenseSelect").val("");
+    $("#componentNameInput").val("");
+    $("#componentVersionInput").val("");
+    $("#componentGroupInput").val("");
+    $("#componentDescriptionInput").val("");
+    $("#componentLicenseSelect").val("");
+    $("#componentFilenameInput").val("");
+    $("#componentPurlInput").val("");
+    $("#componentCpeInput").val("");
+    $("#componentCopyrightInput").val("");
+    $("#componentMd5Input").val("");
+    $("#componentSha1Input").val("");
+    $("#componentSha256Input").val("");
+    $("#componentSha512Input").val("");
+    $("#componentSha3256Input").val("");
+    $("#componentSha3512Input").val("");
 }
 
 /**
  * Populates select/dropdown with list of all licenses.
  */
 function populateLicenseData(data) {
-    let select = $("#createComponentLicenseSelect");
+    let select = $("#componentLicenseSelect");
     $.each(data, function() {
         select.append($("<option />").val(this.licenseId).text(this.name));
     });
     select.selectpicker('refresh');
 }
 
+function updateStats(metric) {
+    $("#statTotalProjects").html(metric.projects);
+    $("#statVulnerableProjects").html(metric.vulnerableProjects);
+    $("#statTotalComponents").html(metric.components);
+    $("#statVulnerableComponents").html(metric.vulnerableComponents);
+    $("#statPortfolioVulnerabilities").html(metric.vulnerabilities);
+    $("#statLastMeasurement").html(filterXSS($common.formatTimestamp(metric.lastOccurrence, true)));
+    $("#statInheritedRiskScore").html(metric.inheritedRiskScore);
+}
+
 /**
  * Setup events and trigger other stuff when the page is loaded and ready.
  */
 $(document).ready(function () {
-
-    // Initialize all tooltips
-    //$('[data-toggle="tooltip"]').tooltip();
-
+    $rest.getPortfolioCurrentMetrics(function(metrics) {
+        updateStats(metrics);
+    });
     $rest.getLicenses(populateLicenseData);
 
     // Listen for if the button to create a project is clicked
-    $("#createComponentCreateButton").on("click", function() {
-        const name = $("#createComponentNameInput").val();
-        const version = $("#createComponentVersionInput").val();
-        const group = $("#createComponentGroupInput").val();
-        const description = $("#createComponentDescriptionInput").val();
-        const license = $("#createComponentLicenseSelect").val();
-        $rest.createComponent(name, version, group, description, license, componentCreated);
+    $("#componentCreateButton").on("click", function() {
+        const name = $common.valueWithDefault($("#componentNameInput").val(), null);
+        const version = $common.valueWithDefault($("#componentVersionInput").val(), null);
+        const group = $common.valueWithDefault($("#componentGroupInput").val(), null);
+        const description = $common.valueWithDefault($("#componentDescriptionInput").val(), null);
+        const license = $common.valueWithDefault($("#componentLicenseSelect").val(), null);
+        const filename = $common.valueWithDefault($("#componentFilenameInput").val(), null);
+        const classifier = $common.valueWithDefault($("#componentClassifierInput").val(), null);
+        const purl = $common.valueWithDefault($("#componentPurlInput").val(), null);
+        const cpe = $common.valueWithDefault($("#componentCpeInput").val(), null);
+        const copyright = $common.valueWithDefault($("#componentCopyrightInput").val(), null);
+        const md5 = $common.valueWithDefault($("#componentMd5Input").val(), null);
+        const sha1 = $common.valueWithDefault($("#componentSha1Input").val(), null);
+        const sha256 = $common.valueWithDefault($("#componentSha256Input").val(), null);
+        const sha512 = $common.valueWithDefault($("#componentSha512Input").val(), null);
+        const sha3_256 = $common.valueWithDefault($("#componentSha3256Input").val(), null);
+        const sha3_512 = $common.valueWithDefault($("#componentSha3512Input").val(), null);
+
+        $rest.createComponent(name, version, group, description, license,
+            filename, classifier, purl, cpe, copyright,
+            md5, sha1, sha256, sha512, sha3_256, sha3_512, componentCreated);
         clearInputFields();
     });
 
     // When modal closes, clear out the input fields
     $("#modalCreateComponent").on("hidden.bs.modal", function() {
         clearInputFields();
+    });
+
+    // Restrict characters that can be typed into hash inputs
+    $(".hash-input").keypress( function(e) {
+        return ("acbdefABCDEF0123456789").indexOf(String.fromCharCode(e.which)) >= 0;
     });
 
 });

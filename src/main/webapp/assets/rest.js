@@ -31,17 +31,28 @@ const METHOD_PUT = "PUT";
 const METHOD_DELETE = "DELETE";
 const URL_ABOUT = "api/version";
 const URL_LOGIN = "api/v1/user/login";
+const URL_FORCE_PW_CHANGE = "api/v1/user/forceChangePassword";
 const URL_TEAM = "api/v1/team";
 const URL_USER = "api/v1/user";
 const URL_USER_LDAP = "api/v1/user/ldap";
 const URL_USER_MANAGED = "api/v1/user/managed";
 const URL_USER_SELF = "api/v1/user/self";
+const URL_PERMISSION = "api/v1/permission";
 const URL_PROJECT = "api/v1/project";
+const URL_FINDING = "api/v1/finding";
 const URL_LICENSE = "api/v1/license";
+const URL_CWE = "api/v1/cwe";
 const URL_COMPONENT = "api/v1/component";
+const URL_DEPENDENCY = "api/v1/dependency";
 const URL_VULNERABILITY = "api/v1/vulnerability";
+const URL_ANALYSIS = "api/v1/analysis";
 const URL_SEARCH = "api/v1/search";
 const URL_METRICS = "api/v1/metrics";
+const URL_CALCULATOR_CVSS = "api/v1/calculator/cvss";
+const URL_REPOSITORY = "api/v1/repository";
+const URL_CONFIG_PROPERTY = "api/v1/configProperty";
+const URL_NOTIFICATION_PUBLISHER = "api/v1/notification/publisher";
+const URL_NOTIFICATION_RULE = "api/v1/notification/rule";
 
 const $rest = function() {
 };
@@ -199,6 +210,45 @@ $rest.login = function login(username, password, successCallback, failCallback) 
                 if (failCallback) {
                     $rest.callbackValidator(failCallback(data));
                 }
+            },
+            403: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Performs a forced password change using the specified username and password to assert authentication along with
+ * the new and confirmed password.
+ */
+$rest.forceChangePassword = function forceChangePassword(username, currentPassword, newPassword, confirmPassword, successCallback, failCallback) {
+    $.ajax({
+        type: METHOD_POST,
+        url: $rest.contextPath() + URL_FORCE_PW_CHANGE,
+        data: ({username: username, password: currentPassword, newPassword: newPassword, confirmPassword: confirmPassword}),
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            401: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            },
+            403: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            },
+            406: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
             }
         }
     });
@@ -215,6 +265,30 @@ $rest.getPrincipalSelf = function getPrincipalSelf(successCallback, failCallback
         success: function (data) {
             if (successCallback) {
                 $rest.callbackValidator(successCallback(data));
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Updates user info (if available)
+ */
+$rest.updatePrincipalSelf = function getPrincipalSelf(fullname, email, newPassword, confirmPassword, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_USER_SELF,
+        contentType: CONTENT_TYPE_JSON,
+        type: METHOD_POST,
+        data: JSON.stringify({fullname: fullname, email: email, newPassword: newPassword, confirmPassword: confirmPassword}),
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
             }
         },
         error: function(xhr, ajaxOptions, thrownError) {
@@ -304,6 +378,35 @@ $rest.getProject = function getProject(uuid, successCallback, failCallback) {
 };
 
 /**
+ * Service called to retrieve a list of all projects with the specified name
+ */
+$rest.getProjectVersions = function getProjectVersions(name, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_PROJECT + "?name=" + name,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
  * Service called when a project is updated.
  */
 $rest.updateProject = function updateProject(uuid, name, version, description, tags, successCallback, failCallback) {
@@ -364,7 +467,38 @@ $rest.deleteProject = function deleteProject(uuid, successCallback, failCallback
 /**
  * Service called when a component is created.
  */
-$rest.createComponent = function createComponent(name, version, group, description, license, successCallback, failCallback) {
+$rest.createComponent = function createComponent(name, version, group, description, license,
+                                                 filename, classifier, purl, cpe, copyright,
+                                                 md5, sha1, sha256, sha512, sha3_256, sha3_512,
+                                                 successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_COMPONENT,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_PUT,
+        data: JSON.stringify({name: name, version: version, group:group, description: description, license: license,
+            filename: filename, classifier: classifier, purl: purl, cpe: cpe, copyright: copyright,
+            md5: md5, sha1: sha1, sha256: sha256, sha512: sha512, sha3_256: sha3_256, sha3_512: sha3_512}),
+        statusCode: {
+            201: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a component is created. Same as createComponent but minimal fields. Check usage before changing.
+ */
+$rest.createComponentMinimalFields = function createComponent(name, version, group, description, license,
+                                                 successCallback, failCallback) {
     $.ajax({
         url: $rest.contextPath() + URL_COMPONENT,
         contentType: CONTENT_TYPE_JSON,
@@ -389,13 +523,18 @@ $rest.createComponent = function createComponent(name, version, group, descripti
 /**
  * Service called when a component is updated.
  */
-$rest.updateComponent = function updateComponent(uuid, name, version, group, description, license, successCallback, failCallback) {
+$rest.updateComponent = function updateComponent(uuid, name, version, group, description, license,
+                                                 filename, classifier, purl, cpe, copyright,
+                                                 md5, sha1, sha256, sha512, sha3_256, sha3_512,
+                                                 successCallback, failCallback) {
     $.ajax({
         url: $rest.contextPath() + URL_COMPONENT,
         contentType: CONTENT_TYPE_JSON,
         dataType: DATA_TYPE,
         type: METHOD_POST,
-        data: JSON.stringify({uuid: uuid, name: name, version: version, group: group, description: description, license: license}),
+        data: JSON.stringify({uuid: uuid, name: name, version: version, group:group, description: description, license: license,
+            filename: filename, classifier: classifier, purl: purl, cpe: cpe, copyright: copyright,
+            md5: md5, sha1: sha1, sha256: sha256, sha512: sha512, sha3_256: sha3_256, sha3_512: sha3_512}),
         statusCode: {
             200: function(data) {
                 if (successCallback) {
@@ -498,6 +637,56 @@ $rest.getComponent = function getProject(uuid, successCallback, failCallback) {
 };
 
 /**
+ * Service called when one or more components is added as a dependency to a project.
+ */
+$rest.addDependency = function addDependency(projectUuid, componentUuids, notes, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_DEPENDENCY,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_PUT,
+        data: JSON.stringify({projectUuid: projectUuid, componentUuids: componentUuids, notes: notes}),
+        statusCode: {
+            201: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when one or more components are removed as a dependency from a project.
+ */
+$rest.removeDependency = function removeDependency(projectUuid, componentUuids, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_DEPENDENCY,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_DELETE,
+        data: JSON.stringify({projectUuid: projectUuid, componentUuids: componentUuids}),
+        statusCode: {
+            204: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
  * Service called to retrieve all licenses
  */
 $rest.getLicenses = function getLicenses(successCallback, failCallback) {
@@ -527,6 +716,97 @@ $rest.getLicenses = function getLicenses(successCallback, failCallback) {
 $rest.getLicense = function getLicense(licenseId, successCallback, failCallback) {
     $.ajax({
         url: $rest.contextPath() + URL_LICENSE + "/" + licenseId,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve CVSS (v2/v3) scores (based on the vector passed)
+ */
+$rest.getCvssScores = function getCvssScores(vector, successCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_CALCULATOR_CVSS + "?vector=" + vector,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve all licenses
+ */
+$rest.getCwes = function getCwes(successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_CWE + "?offset=0&limit=1000",
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve a specific CWE
+ */
+$rest.getCwe = function getCwe(cweId, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_CWE + "/" + cweId,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve all findings for the specified project
+ */
+$rest.getProjectFindings = function getProjectFindings(uuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_FINDING + "/project/" + uuid,
         contentType: CONTENT_TYPE_JSON,
         dataType: DATA_TYPE,
         type: METHOD_GET,
@@ -768,6 +1048,216 @@ $rest.getComponentMetrics = function getComponentMetrics(uuid, daysBack, success
 };
 
 /**
+ * Service called to retrieve current metrics for a specific dependency
+ */
+$rest.getDependencyCurrentMetrics = function getDependencyCurrentMetrics(projectUuid, componentUuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_METRICS + "/project/" + projectUuid + "/component/" + componentUuid + "/current",
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve historical metrics for a specific dependency
+ */
+$rest.getDependencyMetrics = function getDependencyMetrics(projectUuid, componentUuid, daysBack, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_METRICS + "/project/" + projectUuid + "/component/" + componentUuid + "/days/" + daysBack,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to refresh metrics for the entire portfolio
+ */
+$rest.refreshPortfolioMetrics = function refreshPortfolioMetrics(successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_METRICS + "/portfolio/refresh",
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to refresh metrics for a specific project
+ */
+$rest.refreshProjectMetrics = function refreshProjectMetrics(uuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_METRICS + "/project/" + uuid + "/refresh",
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to refresh metrics for a specific dependency
+ */
+$rest.refreshDependencyMetrics = function refreshDependencyMetrics(projectUuid, componentUuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_METRICS + "/project/" + projectUuid + "/component/" + componentUuid + "/refresh",
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to refresh metrics for a specific component
+ */
+$rest.refreshComponentMetrics = function refreshComponentMetrics(uuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_METRICS + "/component/" + uuid + "/refresh",
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve analysis decisions
+ */
+$rest.getAnalysis = function getAnalysis(projectUuid, componentUuid, vulnerabilityUuid, successCallback, failCallback) {
+    let queryString;
+    if (projectUuid == null) {
+        queryString = "?component=" + componentUuid + "&vulnerability=" + vulnerabilityUuid
+    } else {
+        queryString = "?project=" + projectUuid + "&component=" + componentUuid + "&vulnerability=" + vulnerabilityUuid;
+    }
+    $.ajax({
+        url: $rest.contextPath() + URL_ANALYSIS + queryString,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve analysis decisions
+ */
+$rest.makeAnalysis = function makeAnalysis(projectUuid, componentUuid, vulnerabilityUuid, analysisState, comment, isSuppressed, successCallback, failCallback) {
+    let url = (projectUuid != null) ? URL_ANALYSIS : URL_ANALYSIS + "/global";
+    $.ajax({
+        url: $rest.contextPath() + url,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_PUT,
+        data: JSON.stringify({project: projectUuid, component: componentUuid, vulnerability: vulnerabilityUuid, analysisState: analysisState, comment: comment, isSuppressed: isSuppressed}),
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
  * Service called when a team is created.
  */
 $rest.createTeam = function createTeam(name, successCallback, failCallback) {
@@ -854,13 +1344,13 @@ $rest.deleteTeam = function deleteTeam(uuid, successCallback, failCallback) {
 /**
  * Service called when a managed user is created.
  */
-$rest.createManagedUser = function createManagedUser(username, successCallback, failCallback) {
+$rest.createManagedUser = function createManagedUser(username, fullname, email, newPassword, confirmPassword, forcePasswordChange, nonExpiryPassword, suspended, successCallback, failCallback) {
     $.ajax({
         url: $rest.contextPath() + URL_USER_MANAGED,
         contentType: CONTENT_TYPE_JSON,
         dataType: DATA_TYPE,
         type: METHOD_PUT,
-        data: JSON.stringify({username: username}),
+        data: JSON.stringify({username: username, fullname: fullname, email: email, newPassword: newPassword, confirmPassword: confirmPassword, forcePasswordChange: forcePasswordChange, nonExpiryPassword: nonExpiryPassword, suspended: suspended}),
         statusCode: {
             201: function(data) {
                 if (successCallback) {
@@ -878,15 +1368,14 @@ $rest.createManagedUser = function createManagedUser(username, successCallback, 
 
 /**
  * Service called when a managed user is updated.
- * //todo: complete this service on client and server side
  */
-$rest.updateManagedUser = function updateManagedUser(username, successCallback, failCallback) {
+$rest.updateManagedUser = function updateManagedUser(username, fullname, email, newPassword, confirmPassword, forcePasswordChange, nonExpiryPassword, suspended, successCallback, failCallback) {
     $.ajax({
         url: $rest.contextPath() + URL_USER_MANAGED,
         contentType: CONTENT_TYPE_JSON,
         dataType: DATA_TYPE,
         type: METHOD_POST,
-        data: JSON.stringify({username: username}),
+        data: JSON.stringify({username: username, fullname: fullname, email: email, newPassword: newPassword, confirmPassword: confirmPassword, forcePasswordChange: forcePasswordChange, nonExpiryPassword: nonExpiryPassword, suspended: suspended}),
         statusCode: {
             200: function(data) {
                 if (successCallback) {
@@ -1146,6 +1635,424 @@ $rest.removeUserFromTeam = function removeUserFromTeam(username, teamuuid, succe
 };
 
 /**
+ * Service called when a permission is assigned.
+ */
+$rest.assignPermissionToUser = function assignPermissionToUser(username, permissionName, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_PERMISSION + "/" + permissionName + "/user/" + username,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_POST,
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            304: function (data) {
+                // The user is already a member of the specified team
+                // Intentionally left blank
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a permission is un-assigned.
+ */
+$rest.removePermissionFromUser = function removePermissionFromUser(username, permissionName, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_PERMISSION + "/" + permissionName + "/user/" + username,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_DELETE,
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            304: function (data) {
+                // The user was not a member of the specified team
+                // Intentionally left blank
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a permission is assigned.
+ */
+$rest.assignPermissionToTeam = function assignPermissionToTeam(uuid, permissionName, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_PERMISSION + "/" + permissionName + "/team/" + uuid,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_POST,
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            304: function (data) {
+                // The user is already a member of the specified team
+                // Intentionally left blank
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a permission is un-assigned.
+ */
+$rest.removePermissionFromTeam = function removePermissionFromTeam(uuid, permissionName, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_PERMISSION + "/" + permissionName + "/team/" + uuid,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_DELETE,
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            304: function (data) {
+                // The user was not a member of the specified team
+                // Intentionally left blank
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a vulnerability is created.
+ */
+$rest.createVulnerability = function createVulnerability(vulnId, title, subTitle, description, recommendation,
+                                                         references, credits, created, published, updated, cweId,
+                                                         cvssV2Vector, cvssV3Vector, vulnerableVersions, patchedVersions,
+                                                         successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_VULNERABILITY,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_PUT,
+        data: JSON.stringify({vulnId: vulnId, title: title, subTitle: subTitle, description: description,
+            recommendation: recommendation, references: references, credits: credits, created: created,
+            published: published, updated: updated, cwe: {cweId: cweId}, cvssV2Vector: cvssV2Vector,
+            cvssV3Vector: cvssV3Vector, vulnerableVersions: vulnerableVersions, patchedVersions: patchedVersions}),
+        statusCode: {
+            201: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve the latest version of a tracked component
+ */
+$rest.getLatestFromRepository = function getProject(packageUrl, successCallback, failCallback) {
+    let queryString = "?purl=" + encodeURIComponent(packageUrl);
+    $.ajax({
+        url: $rest.contextPath() + URL_REPOSITORY + "/latest" + queryString,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            204: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            400: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called to retrieve config properties
+ */
+$rest.getConfigProperties = function getConfigProperties(successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_CONFIG_PROPERTY,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_GET,
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a config property is updated
+ */
+$rest.updateConfigProperty = function updateConfigProperty(groupName, propertyName, propertyValue, successCallback, failCallback) {
+    if ($common.isEmpty(groupName) || $common.isEmpty(propertyName)) {
+        return;
+    }
+    $.ajax({
+        url: $rest.contextPath() + URL_CONFIG_PROPERTY,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_POST,
+        data: JSON.stringify({groupName: groupName, propertyName: propertyName, propertyValue: propertyValue}),
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a notification rule is created
+ */
+$rest.createNotificationRule = function createNotificationRule(name, scope, level, publisherUuid, successCallback, failCallback) {
+    if ($common.isEmpty(name)) {
+        return;
+    }
+    $.ajax({
+        url: $rest.contextPath() + URL_NOTIFICATION_RULE,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_PUT,
+        data: JSON.stringify({name: name, scope: scope, notificationLevel: level, publisher: { uuid: publisherUuid } }),
+        statusCode: {
+            201: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a notification rule is updated
+ */
+$rest.updateNotificationRule = function updateNotificationRule(uuid, name, level, publisherConfig, notifyOn, successCallback, failCallback) {
+    if ($common.isEmpty(name)) {
+        return;
+    }
+    $.ajax({
+        url: $rest.contextPath() + URL_NOTIFICATION_RULE,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_POST,
+        data: JSON.stringify({uuid: uuid, name: name, notificationLevel: level, publisherConfig: publisherConfig, notifyOn: notifyOn}),
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a notification rule is deleted
+ */
+$rest.deleteNotificationRule = function deleteNotificationRule(uuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_NOTIFICATION_RULE,
+        contentType: CONTENT_TYPE_JSON,
+        type: METHOD_DELETE,
+        data: JSON.stringify({uuid: uuid}),
+        statusCode: {
+            204: function(data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            404: function(data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a project is added to a notification rule
+ */
+$rest.addProjectToNotificationRule = function addProjectToNotificationRule(ruleUuid, projectUuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_NOTIFICATION_RULE + "/" + ruleUuid + "/project/" + projectUuid,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_POST,
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            304: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
+ * Service called when a project is removed from a notification rule
+ */
+$rest.removeProjectFromNotificationRule = function removeProjectFromNotificationRule(ruleUuid, projectUuid, successCallback, failCallback) {
+    $.ajax({
+        url: $rest.contextPath() + URL_NOTIFICATION_RULE + "/" + ruleUuid + "/project/" + projectUuid,
+        contentType: CONTENT_TYPE_JSON,
+        dataType: DATA_TYPE,
+        type: METHOD_DELETE,
+        statusCode: {
+            200: function (data) {
+                if (successCallback) {
+                    $rest.callbackValidator(successCallback(data));
+                }
+            },
+            304: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            },
+            404: function (data) {
+                if (failCallback) {
+                    $rest.callbackValidator(failCallback(data));
+                }
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError){
+            if (failCallback) {
+                $rest.callbackValidator(failCallback(xhr, ajaxOptions, thrownError));
+            }
+        }
+    });
+};
+
+/**
  * Generic handler for all AJAX requests
  */
 $.ajaxSetup({
@@ -1158,6 +2065,12 @@ $.ajaxSetup({
     error: function(xhr, textStatus) {
         if(textStatus === "timeout") {
             $common.displayErrorModal(xhr, "The server is not responding. Please try again or contact the administrator.");
+        }
+    },
+    complete: function(xhr, textStatus) {
+        if ($.getUrlVar("debug")) {
+            console.log("Status: " + xhr.status);
+            (xhr.responseJSON) ? console.log(xhr.responseJSON) : console.log(xhr.responseText);
         }
     },
     timeout: 10000,

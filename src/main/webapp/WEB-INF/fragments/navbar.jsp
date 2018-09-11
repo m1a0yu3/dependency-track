@@ -4,6 +4,7 @@
     private static final boolean AUTHN_ENABLED = Config.getInstance().getPropertyAsBoolean(Config.AlpineKey.ENFORCE_AUTHENTICATION);
     private static final boolean AUTHZ_ENABLED = Config.getInstance().getPropertyAsBoolean(Config.AlpineKey.ENFORCE_AUTHORIZATION);
 %>
+<div id="loader" class="spinner"></div>
 <nav id="navbar-container" class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -38,13 +39,11 @@
 </nav>
 <div id="sidebar">
     <ul>
-        <li><a href="<c:url value="/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="dashboard" title="Dashboard"><i class="fa fa-area-chart"></i><span>Dashboard</span></a></li>
-        <li><a href="<c:url value="/projects/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="projects" title="Projects"><i class="fa fa-sitemap"></i><span>Projects</span></a></li>
-        <li><a href="<c:url value="/components/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="components" title="Components"><i class="fa fa-cubes"></i><span>Components</span></a></li>
-        <li><a href="<c:url value="/vulnerabilities/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="vulnerabilities" title="Vulnerabilities"><i class="fa fa-shield"></i><span>Vulnerabilities</span></a></li>
-        <li><a href="<c:url value="/licenses/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="licenses" title="Licenses"><i class="fa fa-balance-scale"></i><span>Licenses</span></a></li>
-        <% if(AUTHN_ENABLED) { %>
-        <li><a href="<c:url value="/admin/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="admin" title="Administration"><i class="fa fa-cogs"></i><span>Administration</span></a></li>
-        <% } %>
+        <li id="sidebar-dashboard-button"><a href="<c:url value="/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="dashboard" title="Dashboard"><i class="fa fa-area-chart"></i><span>Dashboard</span></a></li>
+        <li id="sidebar-projects-button"><a href="<c:url value="/projects/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="projects" title="Projects"><i class="fa fa-sitemap"></i><span>Projects</span></a></li>
+        <li id="sidebar-components-button"><a href="<c:url value="/components/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="components" title="Components"><i class="fa fa-cubes"></i><span>Components</span></a></li>
+        <li id="sidebar-vulnerabilities-button"><a href="<c:url value="/vulnerabilities/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="vulnerabilities" title="Vulnerabilities"><i class="fa fa-shield"></i><span>Vulnerabilities</span></a></li>
+        <li id="sidebar-licenses-button"><a href="<c:url value="/licenses/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="licenses" title="Licenses"><i class="fa fa-balance-scale"></i><span>Licenses</span></a></li>
+        <li id="sidebar-admin-button" style="display:none"><a href="<c:url value="/admin/"/>" data-toggle="tooltip" data-placement="right" data-sidebar="admin" title="Administration"><i class="fa fa-cogs"></i><span>Administration</span></a></li>
     </ul>
 </div>

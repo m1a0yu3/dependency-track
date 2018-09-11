@@ -22,6 +22,18 @@ const $common = function() {
 };
 
 /**
+ * Defines JSON characters that need to be escaped when data is used in HTML
+ */
+const __entityMap = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+    "/": "&#x2F;"
+};
+
+/**
  * Returns a function, that, as long as it continues to be invoked, will not
  * be triggered. The function will be called after it stops being called for
  * N milliseconds. If `immediate` is passed, trigger the function on the
@@ -79,18 +91,41 @@ $common.isBlank = function isBlank(string) {
 
 //######################################################################################################################
 /**
- * Called after we have verified that a user is authenticated (if authentication is enabled)
+ * Called after we have veri fied that a user is authenticated (if authentication is enabled)
  */
 $common.initialize = function initialize() {
-    //todo: check permissions - populate admin and other navigational things accordingly - add 'data' to param
+    const token = $auth.decodeToken($auth.getToken());
+
+    if ($auth.hasPermission($auth.VIEW_PORTFOLIO, token)) {
+        $("#content-container.require-view-portfolio").css("display", "block");
+    }
+    if ($auth.hasPermission($auth.ACCESS_MANAGEMENT, token) || $auth.hasPermission($auth.SYSTEM_CONFIGURATION, token)) {
+        $("#sidebar-admin-button").css("display", "block");
+    }
+    if ($auth.hasPermission($auth.ACCESS_MANAGEMENT, token)) {
+        $("div.require-access-management").css("display", "block");
+    }
+    if ($auth.hasPermission($auth.SYSTEM_CONFIGURATION, token)) {
+        $("div.require-system-configuration").css("display", "block");
+    }
+    if ($auth.hasPermission($auth.PORTFOLIO_MANAGEMENT, token)) {
+        $("button.require-portfolio-management").css("display", "inline-block");
+        $(".require-portfolio-management").removeAttr("disabled");
+        $(".refresh-metric.require-portfolio-management").css("display", "inline-block");
+    }
+    if ($auth.hasPermission($auth.VULNERABILITY_ANALYSIS, token)) {
+        $("li.require-vulnerability-analysis").css("display", "block");
+    }
+
     $rest.getVersion(
         /**
          * @param {Object} data JSON response object
          * @param data.application the name of the application
          * @param data.version the version of the application
          * @param data.timestamp the timestamp in which the application was built
-         * @param data.dependencyCheck.application the name of Dependency-Check
-         * @param data.dependencyCheck.version the version of Dependency-Check
+         * @param data.framework.name the name of the framework
+         * @param data.framework.version the version of the framework
+         * @param data.framework.timestamp in which the framework was built
          * @method $ jQuery selector
          */
         function onVersionSuccess(data) {
@@ -98,14 +133,29 @@ $common.initialize = function initialize() {
             $("#systemAppName").html(data.application);
             $("#systemAppVersion").html(data.version);
             $("#systemAppTimestamp").html(data.timestamp);
-            $("#dcAppName").html(data.dependencyCheck.application);
-            $("#dcAppVersion").html(data.dependencyCheck.version);
+            $("#systemAppBuildId").html(data.uuid);
+            $("#systemFrameworkName").html(data.framework.name);
+            $("#systemFrameworkVersion").html(data.framework.version);
+            $("#systemFrameworkTimestamp").html(data.framework.timestamp);
+            $("#systemFrameworkBuildId").html(data.framework.uuid);
 
             if (!$.sessionStorage.isSet("token")) {
                 $("#nav-logout").css("display", "none");
             }
+
+            // SNAPSHOT release notification
+            if (data.version.includes("SNAPSHOT") && !$.sessionStorage.isSet("snapshot")) {
+                $("#modal-snapshotNotification").modal();
+                $.sessionStorage.set("snapshot", "true");
+            }
         }
     );
+    $common.unloadSpinner();
+};
+
+$common.unloadSpinner = function unloadSpinner() {
+    $('#loader').css('display', 'none');
+    $('#navbar-container').css('display', 'block');
 };
 
 /**
@@ -131,16 +181,71 @@ $("#login-form").submit(function(event) {
     let password = passwordElement.val();
     $rest.login(username, password, function(data) {
         $.sessionStorage.set("token", data);
-        $("#navbar-container").css("display", "block");
-        $("#sidebar").css("display", "block");
-        $(".main").css("display", "block");
-        $("#modal-login").modal("hide");
-        $common.initialize();
+        // Hack to fix the loading of content after login as defined in:
+        // https://github.com/DependencyTrack/dependency-track/issues/167
+        // todo: should be removed in the future - especially once the next gen UI (SPA) is available
+        window.location.reload(false); // Reload from browser cache
+
+        //$("#navbar-container").css("display", "block");
+        //$("#sidebar").css("display", "block");
+        //$(".main").css("display", "block");
+        //$("#modal-login").modal("hide");
+        //$common.initialize();
     }, function(data) {
-        // todo: Display invalid username or password somewhere
+        switch (data.responseText) {
+            case "INVALID_CREDENTIALS":
+                $common.displayInfoModal("Invalid username or password");
+                break;
+            case "EXPIRED_CREDENTIALS":
+                $common.displayInfoModal("The supplied credential have expired");
+                break;
+            case "FORCE_PASSWORD_CHANGE":
+                $("#modal-login").modal("hide");
+                $("#modal-forcePasswordChange").modal("show");
+                break;
+            case "SUSPENDED":
+                $common.displayInfoModal("This account has been suspended and is no longer active");
+                break;
+            case "UNMAPPED_ACCOUNT":
+                $common.displayInfoModal("This account does not have access to Dependency-Track");
+                break;
+            default:
+                $common.displayInfoModal("Unable to authenticate. Contact your Dependency-Track administrator");
+        }
     });
     usernameElement.val("");
     passwordElement.val("");
+});
+
+/**
+ * Executed when the change password button is clicked. Prevent the form from actually being
+ * submitted and uses javascript to submit the form info.
+ *
+ * @method $ jQuery selector
+ */
+$("#forcePasswordChange-form").submit(function(event) {
+    event.preventDefault();
+    let usernameElement = $("#forcePasswordChange-username");
+    let username = usernameElement.val();
+    let passwordElement = $("#forcePasswordChange-password");
+    let password = passwordElement.val();
+    let newPasswordElement = $("#forcePasswordChange-newPassword");
+    let newPassword = newPasswordElement.val();
+    let confirmPasswordElement = $("#forcePasswordChange-confirmPassword");
+    let confirmPassword = confirmPasswordElement.val();
+    $("#modal-forcePasswordChange").modal("hide");
+    $rest.forceChangePassword(username, password, newPassword, confirmPassword, function(data) {
+        $common.displayInfoModal("Password successfully changed");
+        $("#modal-forcePasswordChange").modal("hide");
+        $("#modal-login").modal("show");
+    }, function(data) {
+        $("#modal-forcePasswordChange").modal("show");
+        $common.displayInfoModal(data.responseText);
+    });
+    usernameElement.val("");
+    passwordElement.val("");
+    newPasswordElement.val("");
+    confirmPasswordElement.val("");
 });
 
 /**
@@ -155,6 +260,14 @@ $common.displayErrorModal = function displayErrorModal(xhr, fallbackMessage) {
     }
     $("#modal-genericError").modal("show");
     $("#modal-genericErrorContent").html(message);
+};
+
+/**
+ * Displays an informational modal with the specified message.
+ */
+$common.displayInfoModal = function displayInfoModal(message) {
+    $("#modal-informational").modal("show");
+    $("#modal-infoMessage").html(message);
 };
 
 /**
@@ -204,15 +317,16 @@ $common.generateSeverityProgressBar = function generateSeverityProgressBar(criti
 $common.formatTimestamp = function formatTimestamp(timestamp, includeTime) {
     let date = new Date(timestamp);
     let months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function pad(num) { return num < 10 ? "0" + num : num; }
     if (includeTime) {
-        return date.getDate() + " " + months[date.getMonth()] + " " + date.getFullYear() + " at " + date.toTimeString();
+        return date.getDate() + " " + months[date.getMonth()] + " " + date.getFullYear() + " at " + pad(date.getHours()) + ":" + pad(date.getMinutes()) + ":" + pad(date.getSeconds());
     } else {
         return date.getDate() + " " + months[date.getMonth()] + " " + date.getFullYear();
     }
 };
 
 /**
- * Formats and returns a specialized label for a vulnerability source (NVD, NSP, VulnDB, etc).
+ * Formats and returns a specialized label for a vulnerability source (NVD, NSP, VulnDB, OSSIndex etc).
  */
 $common.formatSourceLabel = function formatSourceLabel(source) {
     let sourceClass = "label-source-" + source.toLowerCase();
@@ -294,6 +408,17 @@ $common.toHtml = function toHtml(string) {
 };
 
 /**
+ * Populates the user profile modal with data from the current logged in user.
+ */
+$common.populateUserProfileData = function populateUserProfileData(data) {
+    $("#profileUsernameInput").val(filterXSS(data.username));
+    $("#profileFullnameInput").val(filterXSS(data.fullname));
+    $("#profileEmailInput").val(filterXSS(data.email));
+    $("#profileNewPasswordInput").val("");
+    $("#profileConfirmPasswordInput").val("");
+};
+
+/**
  * Executed when the DOM is ready for JavaScript to be executed.
  */
 $(document).ready(function () {
@@ -302,8 +427,23 @@ $(document).ready(function () {
     $('[data-toggle="tooltip"]').tooltip();
 
     // Get information about the current logged in user (if available)
-    $rest.getPrincipalSelf($common.initialize);
+    $rest.getPrincipalSelf(
+        function(data) {
+            $common.populateUserProfileData(data);
+            $common.initialize();
+        });
     let contextPath = $rest.contextPath();
+
+    // Listen for the update profile button being pressed
+    $("#updateProfileButton").on("click", function () {
+        let fullname = $("#profileFullnameInput").val();
+        let email = $("#profileEmailInput").val();
+        let newPassword = $("#profileNewPasswordInput").val();
+        let confirmPassword = $("#profileConfirmPasswordInput").val();
+        $rest.updatePrincipalSelf(fullname, email, newPassword, confirmPassword, function(data) {
+            $common.populateUserProfileData(data);
+        });
+    });
 
     /**
      * Function that adds the 'active' class to one of the buttons in
@@ -394,17 +534,6 @@ $(document).ready(function () {
 
 });
 
-/**
- * Defines JSON characters that need to be escaped when data is used in HTML
- */
-const __entityMap = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-    "/": "&#x2F;"
-};
 
 /**
  * Extends JQuery
