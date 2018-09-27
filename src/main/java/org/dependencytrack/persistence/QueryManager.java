@@ -480,6 +480,18 @@ public class QueryManager extends AlpineQueryManager {
     }
 
     /**
+     * Returns a list of all components.
+     * This method if designed NOT to provide paginated results.
+     * @return a List of Components
+     */
+    @SuppressWarnings("unchecked")
+    public List<Component> getAllComponents() {
+        final Query query = pm.newQuery(Component.class);
+        query.setOrdering("id asc");
+        return query.executeResultList(Component.class);
+    }
+
+    /**
      * Returns a Component by its hash. Supports MD5, SHA-1, SHA-256, SHA-512, SHA3-256, and SHA3-512 hashes.
      * @param hash the hash of the component to retrieve
      * @return a Component, or null if not found
@@ -740,6 +752,7 @@ public class QueryManager extends AlpineQueryManager {
             vulnerability.setSubTitle(transientVulnerability.getSubTitle());
             vulnerability.setReferences(transientVulnerability.getReferences());
             vulnerability.setRecommendation(transientVulnerability.getRecommendation());
+            vulnerability.setSeverity(transientVulnerability.getSeverity());
             vulnerability.setCwe(transientVulnerability.getCwe());
             vulnerability.setCvssV2Vector(transientVulnerability.getCvssV2Vector());
             vulnerability.setCvssV2BaseScore(transientVulnerability.getCvssV2BaseScore());
@@ -812,7 +825,7 @@ public class QueryManager extends AlpineQueryManager {
     public List<Vulnerability> getVulnerabilitiesForNpmModule(String module) {
         final Query query = pm.newQuery(Vulnerability.class, "source == :source && subtitle == :module");
         query.getFetchPlan().addGroup(Vulnerability.FetchGroup.COMPONENTS.name());
-        return (List<Vulnerability>) query.execute(Vulnerability.Source.NSP.name(), module);
+        return (List<Vulnerability>) query.execute(Vulnerability.Source.NPM.name(), module);
     }
 
     /**
